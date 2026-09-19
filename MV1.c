@@ -55,10 +55,21 @@ void leeArchivo(MV *maquina){
     }
 }
 
+void ejecucion(MV maquina){
+    unsigned int IP = maquina->registros[0];
+    unsigned char byte = maquina->memoria[IP];
+
+    maquina->registros[1] =  byte & 0x1F; //OPC
+
+    int tipoB = (byte >> 6) & 0x03;
+    int tipoA = (byte >> 5) & 0x01;
+
+}
 
 
 void main(){
     MV maquina;
 
     leeArchivo(&maquina);
+    ejecucion(maquina);
 }
