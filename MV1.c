@@ -1,6 +1,6 @@
-<include stdio.h>
-<include stdlib.h>
-<include string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct{
    short int base;
@@ -42,7 +42,7 @@ void leeArchivo(MV *maquina){
         printf("Error al abrir el archivo tipo .vmx\n");
     else{
         fread(encabezado,sizeof(char),8,archb);
-        if(strncmp(encabezado, "VMX26", 5) != 0 || encabezado[5]!=1){ //si tamCS es > 16384????? invalido?
+        if(strncmp(encabezado, "VMX26", 5) != 0 || encabezado[5]!=1 || tamCS > 16384 ){ //si tamCS es > 16384????? invalido?
             printf("cabecera invalida"); 
             fclose(archb);
         }else{
@@ -64,6 +64,14 @@ void ejecucion(MV maquina){
     int tipoB = (byte >> 6) & 0x03;
     int tipoA = (byte >> 5) & 0x01;
 
+    int pos = IP + 1; // Primer byte después de la cabecera
+    maquina->registros[3] = tipoB << 24; // OP2: guardamos el tipo
+    if (tipoB == 2) {
+        maquina->registros[3] |= (maquina->memoria[pos] << 8)
+                               | maquina->memoria[pos + 1];
+
+        pos += 2;
+    }
 }
 
 
