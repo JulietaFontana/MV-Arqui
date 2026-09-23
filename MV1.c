@@ -56,7 +56,7 @@ void ejecucion(MV *maquina){
         unsigned char byte = maquina->memoria[IP];
         int pos = IP + 1; // Primer byte después de la cabecera
         
-        OPC = byte & 0x1F
+        OPC = byte & 0x1F;
         maquina->registros[1] =  OPC;
 
         if (OPC >= 0x10 && OPC <= 0x1E){  //2 operandos
@@ -84,25 +84,28 @@ void ejecucion(MV *maquina){
                 }
         }else
             if(OPC == 0x0F) //ningun operando
-                pos = -1;
-            else{           //un operando 
-                tipoA = (byte>>6);
-                maquina->registros[2] = tipoA << 24;
-                if (tipoA == 1){
-                    maquina->registros[2] |= maquina->memoria[pos];
-                    pos++;
-                }else
-                    if (tipoA == 2) {
-                        maquina->registros[2] |= (maquina->memoria[pos] << 8) | maquina->memoria[pos + 1];
-                        pos += 2;
+                pos = -1;   // aca iria stop(maquina)
+            else
+                if (OPC >= 0x00 && OPC <= 0x08){//un operando 
+                    tipoA = (byte>>6);
+                    maquina->registros[2] = tipoA << 24;
+                    if (tipoA == 1){
+                        maquina->registros[2] |= maquina->memoria[pos];
+                        pos++;
                     }else
-                        if (tipoA == 3){
+                        if (tipoA == 2) {
+                            maquina->registros[2] |= (maquina->memoria[pos] << 8) | maquina->memoria[pos + 1];
+                            pos += 2;
+                        }else
+                            if (tipoA == 3){
 
                         }
 
-        } 
+                }else
+                    printf("Error: instruccion invalida\n");
 
         maquina->registros[0] = pos; //avanzo con pos 
+        //
     }
 }
 
