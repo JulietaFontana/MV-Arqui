@@ -11,93 +11,117 @@ void actualizarCC (MV *maquina, int valor){
     
 }
 
+//DIRECCION LOGICA A FISICA
+int direccionFisica(MV *maquina, unsigned int direccionLogica) {
+
+    unsigned int segmento = direccionLogica >> 16;
+    unsigned int desplazamiento = direccionLogica & 0xFFFF;
+
+    if (segmento >= 8) {   // Valida que el segmento exista
+        printf("Error: segmento invalido\n");
+        return -1;
+    }else // Valida que no sea -1
+         if (maquina->TDS[segmento].base == 0xFFFF && maquina->TDS[segmento].tamanio == 0xFFFF) {
+            printf("Error: segmento no utilizado\n");
+            return -1;
+        }else
+            if (desplazamiento >= maquina->TDS[segmento].tamanio) { // Validar que el acceso esté dentro de sus límites
+                printf("Error: direccion fuera del segmento\n");
+                return -1;
+            }
+
+    return maquina->TDS[segmento].base + desplazamiento;
+}
+
 
 //dos operandos 
-void MOV (MV *maquina,unsigned char opA, unsigned char opB){
+void MOV (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void ADD (MV *maquina,unsigned char opA, unsigned char opB){
+
+
+void ADD (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void SUB (MV *maquina,unsigned char opA, unsigned char opB){
+void SUB (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void MUL (MV *maquina,unsigned char opA, unsigned char opB){
+void MUL (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void DIV (MV *maquina,unsigned char opA, unsigned char opB){
+void DIV (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void CMP (MV *maquina,unsigned char opA, unsigned char opB){
+void CMP (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void AND (MV *maquina,unsigned char opA, unsigned char opB){
+void AND (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void OR (MV *maquina,unsigned char opA, unsigned char opB){
+void OR (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void XOR (MV *maquina,unsigned char opA, unsigned char opB){
+void XOR (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void SWAP (MV *maquina,unsigned char opA, unsigned char opB){
+void SWAP (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void SHL (MV *maquina,unsigned char opA, unsigned char opB){
+void SHL (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void SHR (MV *maquina,unsigned char opA, unsigned char opB){
+void SHR (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void SAR (MV *maquina,unsigned char opA, unsigned char opB){
+void SAR (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void LDH (MV *maquina,unsigned char opA, unsigned char opB){
+void LDH (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void LDL (MV *maquina,unsigned char opA, unsigned char opB){
+void LDL (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
-void RND (MV *maquina,unsigned char opA, unsigned char opB){
+void RND (MV *maquina,unsigned int opA, unsigned int opB){
 
 }
 
 //un operando 
-void SYS (MV *maquina,unsigned char opA,unsigned char opB){
+void SYS (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void JMP (MV *maquina,unsigned char opA,unsigned char opB){
-    
-}
-void JP (MV *maquina,unsigned char opA,unsigned char opB){
+void JMP (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void JN (MV *maquina,unsigned char opA,unsigned char opB){
+void JP (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void JZ (MV *maquina,unsigned char opA,unsigned char opB){
+void JN (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void JC (MV *maquina,unsigned char opA,unsigned char opB){
+void JZ (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void JV (MV *maquina,unsigned char opA,unsigned char opB){
+void JC (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void JNP (MV *maquina,unsigned char opA,unsigned char opB){
+void JV (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void JNN (MV *maquina,unsigned char opA,unsigned char opB){
+void JNP (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void JNZ (MV *maquina,unsigned char opA,unsigned char opB){
+void JNN (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void NOT (MV *maquina,unsigned char opA,unsigned char opB){
+void JNZ (MV *maquina,unsigned int opA,unsigned int opB){
+
+}
+void NOT (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
 
 //sin operandos 
-void stop(MV *maquina,unsigned char opA,unsigned char opB) {
+void stop(MV *maquina,unsigned int opA,unsigned int opB) {
     maquina->registros[0] = 0xFFFFFFFF;
 }
