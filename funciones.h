@@ -1,9 +1,9 @@
 #include "funciones.c"
-
+#include <stdint.h>
 
 typedef struct{
-    int base;
-    int tamanio;
+    uint16_t base;
+    uint16_t tamanio;
 }TablaSeg;
 
 typedef struct{

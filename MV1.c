@@ -13,7 +13,6 @@ void incializa(MV *maquina, int tamCS){
         maquina->TDS[i].base = 0xFFFF;
         maquina->TDS[i].tamanio = 0xFFFF;
     }
-    //incializo resto de registros?
     for (int i = 0; i < 32; i++) {
     maquina->registros[i] = 0;
     }
@@ -32,7 +31,7 @@ void leeArchivo(MV *maquina){
     else{
         fread(encabezado,sizeof(char),8,archb);
         int tamCS = ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
-        if(strncmp(encabezado, "VMX26", 5) != 0 || encabezado[5]!=1 || tamCS > 16384 ){ //si tamCS es > 16384????? invalido?
+        if(strncmp(encabezado, "VMX26", 5) != 0 || encabezado[5]!=1 || tamCS > 16384 ){
             printf("cabecera invalida"); 
             fclose(archb);
         }else{
@@ -45,19 +44,24 @@ void leeArchivo(MV *maquina){
 }
 
 void ejecucion(MV *maquina){
-    int tipoA, tipoB;
+    int tipoA, tipoB,OPC;
 
 
     while (maquina->registros[0] < maquina->TDS[0].tamanio){
+        //limpio registros
+        maquina->registros[2] = 0;
+        maquina->registros[3] = 0;
+        
         unsigned int IP = maquina->registros[0];
         unsigned char byte = maquina->memoria[IP];
         int pos = IP + 1; // Primer byte después de la cabecera
+        
+        OPC = byte & 0x1F
+        maquina->registros[1] =  OPC;
 
-        maquina->registros[1] =  byte & 0x1F; //OPC
-
-        if (byte[3] == 1){
+        if (OPC >= 0x10 && OPC <= 0x1E){  //2 operandos
             tipoB = (byte >> 6);
-            tipoA = (byte >> 4) & 0x01;
+            tipoA = (byte >> 4) & 0x03;
             maquina->registros[3] = tipoB << 24;
             maquina->registros[2] = tipoA << 24;
             if (tipoB == 1){
@@ -74,18 +78,14 @@ void ejecucion(MV *maquina){
             if (tipoA == 1){
                 maquina->registros[2] |= maquina->memoria[pos];
                 pos++;
-            }else
-                if (tipoA == 2) {
-                    maquina->registros[2] |= (maquina->memoria[pos] << 8) | maquina->memoria[pos + 1];
-                    pos += 2;
-                }else
-                    if (tipoA == 3){
+            }else   //no va a ser tipo ==2
+                if (tipoA == 3){
 
-                    }
+                }
         }else
-            if(byte[0] == 0 && byte[1]==0 && byte[2]==0)
-                STOP(maquina);
-            else{
+            if(OPC == 0x0F) //ningun operando
+                pos = -1;
+            else{           //un operando 
                 tipoA = (byte>>6);
                 maquina->registros[2] = tipoA << 24;
                 if (tipoA == 1){
