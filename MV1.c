@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "funciones.h"
+#include "OPCodigos.h"
 
 void incializa(MV *maquina, int tamCS){
 
@@ -42,6 +43,15 @@ void leeArchivo(MV *maquina, char *nombreArch){
 
     }
 }
+
+void ejecutarInstruccion(MV *maquina, int opc, unsigned int opA, unsigned int opB){
+    if (tablaOPC[opc].mnemonico == NULL){
+        printf("Error: instruccion invalida\n");
+        return;
+    }
+    tablaOPC[opc].ejecutar(maquina, opA, opB);
+}
+
 
 void ejecucion(MV *maquina){
     int tipoA, tipoB,OPC;
@@ -117,6 +127,8 @@ int main(int argc, char *argv[]){
     MV maquina;
     leeArchivo(&maquina);
     ejecucion(&maquina);
+    //??? strcmp argv?
+    Dissasembler(&maquina);
 
     if (strcmp(argv[2], "-d")==0)
         disassembler(&maquina);
