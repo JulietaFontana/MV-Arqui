@@ -1,4 +1,3 @@
-#include "funciones.c"
 #include <stdint.h>
 
 typedef struct{
@@ -35,18 +34,18 @@ void LDL (MV *maquina,unsigned char opA, unsigned char opB);
 void RND (MV *maquina,unsigned char opA, unsigned char opB);
 
 //un solo operando
-void SYS (MV *maquina,unsigned char opB);
-void JP (MV *maquina,unsigned char opB);
-void JN (MV *maquina,unsigned char opB);
-void JZ (MV *maquina,unsigned char opB);
-void JC (MV *maquina,unsigned char opB);
-void JV (MV *maquina,unsigned char opB);
-void JNP (MV *maquina,unsigned char opB);
-void JNN (MV *maquina,unsigned char opB);
-void JNZ (MV *maquina,unsigned char opB);
-void NOT (MV *maquina,unsigned char opB);
+void SYS (MV *maquina,unsigned char opA,unsigned char opB);
+void JP (MV *maquina,unsigned char opA,unsigned char opB);
+void JN (MV *maquina,unsigned char opA,unsigned char opB);
+void JZ (MV *maquina,unsigned char opA,unsigned char opB);
+void JC (MV *maquina,unsigned char opA,unsigned char opB);
+void JV (MV *maquina,unsigned char opA,unsigned char opB);
+void JNP (MV *maquina,unsigned char opA,unsigned char opB);
+void JNN (MV *maquina,unsigned char opA,unsigned char opB);
+void JNZ (MV *maquina,unsigned char opA,unsigned char opB);
+void NOT (MV *maquina,unsigned char opA,unsigned char opB);
 
 
 //sin operandos
-void STOP(MV *maquina);
+void STOP(MV *maquina,unsigned char opA,unsigned char opB);
 
