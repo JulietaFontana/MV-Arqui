@@ -1,20 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "funciones.h"
+#include "funciones.c"
 
-typedef struct{
-   short int base;
-   short int tamanio;
-}TablaSeg;
-
-typedef struct{
-   unsigned char memoria[16384];
-   TablaSeg TDS[8];
-   unsigned int registros[32];
-}MV;
-
-
-void incializa(MV maquina, int tamCS){
+void incializa(MV *maquina, int tamCS){
 
     maquina->TDS[0].base = 0;
     maquina->TDS[0].tamanio = tamCS;
@@ -42,11 +32,11 @@ void leeArchivo(MV *maquina){
         printf("Error al abrir el archivo tipo .vmx\n");
     else{
         fread(encabezado,sizeof(char),8,archb);
+        int tamCS = ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
         if(strncmp(encabezado, "VMX26", 5) != 0 || encabezado[5]!=1 || tamCS > 16384 ){ //si tamCS es > 16384????? invalido?
             printf("cabecera invalida"); 
             fclose(archb);
         }else{
-            int tamCS =  ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
             fread(maquina->memoria, sizeof(char), tamCS, archb);
             incializa(maquina, tamCS);
             fclose(archb);
@@ -55,7 +45,7 @@ void leeArchivo(MV *maquina){
     }
 }
 
-void ejecucion(MV maquina){
+void ejecucion(MV *maquina){
     unsigned int IP = maquina->registros[0];
     unsigned char byte = maquina->memoria[IP];
 
@@ -68,16 +58,20 @@ void ejecucion(MV maquina){
     maquina->registros[3] = tipoB << 24; // OP2: guardamos el tipo
     if (tipoB == 2) {
         maquina->registros[3] |= (maquina->memoria[pos] << 8)
-                               | maquina->memoria[pos + 1];
+                               |
+                               
+                               
+                               maquina->memoria[pos + 1];
 
         pos += 2;
     }
 }
 
 
-void main(){
+int main(void){
     MV maquina;
-
     leeArchivo(&maquina);
-    ejecucion(maquina);
+    ejecucion(&maquina);
+
+    return 0;
 }
