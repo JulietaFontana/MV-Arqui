@@ -10,7 +10,10 @@
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "C:\\Users\\Azul\\progra2\\CodeBlocks\\MinGW\\bin\\gcc.exe"
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64",
+            "compilerPath": "C:\\msys64\\ucrt64\\bin\\gcc.exe"
         }
     ],
     "version": 4

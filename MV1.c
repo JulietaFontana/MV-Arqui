@@ -22,11 +22,11 @@ void incializa(MV *maquina, int tamCS){
     maquina->registros[0] = maquina->registros[26]; // IP
 }
 
-void leeArchivo(MV *maquina){
+void leeArchivo(MV *maquina, char *nombreArch){
     FILE *archb;
     char encabezado[8];
 
-    archb = fopen("Prueba.vmx", "rb");
+    archb = fopen(nombreArch, "rb");
     if(archb == NULL)
         printf("Error al abrir el archivo tipo .vmx\n");
     else{
@@ -83,20 +83,22 @@ void ejecucion(MV *maquina){
                     pos += 2;
                 }else
                     if (tipoB == 3){
-
+                        maquina->registros[3] |= (maquina->memoria[pos] << 16) | (maquina->memoria[pos + 1] << 8) | maquina->memoria[pos + 2];
+                        pos += 3;
                     }
             if (tipoA == 1){
                 maquina->registros[2] |= maquina->memoria[pos];
                 pos++;
             }else   //no va a ser tipo ==2
                 if (tipoA == 3){
-
+                    maquina->registros[2] |= (maquina->memoria[pos] << 16) | (maquina->memoria[pos + 1] << 8) | maquina->memoria[pos + 2];
+                    pos += 3;
                 }
         }else
             if(OPC == 0x0F) //ningun operando
                 pos = -1;   // aca iria stop(maquina)
             else
-                if (OPC >= 0x00 && OPC <= 0x08){//un operando 
+                if (OPC >= 0x00 && OPC <= 0x08){    //un operando 
                     tipoA = (byte>>6);
                     maquina->registros[2] = tipoA << 24;
                     if (tipoA == 1){
@@ -108,32 +110,28 @@ void ejecucion(MV *maquina){
                             pos += 2;
                         }else
                             if (tipoA == 3){
-
-                        }
+                                maquina->registros[2] |= (maquina->memoria[pos] << 16) | (maquina->memoria[pos + 1] << 8) | maquina->memoria[pos + 2];
+                                pos += 3;
+                            }
 
                 }else
-                    printf("Error: instruccion invalida\n");
-
+                    printf("Error: instruccion invalida\n"); 
+                    //deberia cortar procedimiento
         maquina->registros[0] = pos; //avanzo con pos 
         //
     }
 }
 
 
-
-void Disassembler (MV *maquina){
-    char* mnem[26]= {"SYS","JMP", "JP", "JN", "JZ", "JC", "JV", "JNP", "JNN", "JNZ", "NOT","--","--","--","--","STOP","MOV", "ADD", "SUB", "MUL", "DIV", "CMP", "AND", "OR","XOR", "SWAP", "SHL", "SHR", "SAR", "LDL", "LDH", "RND"};
-                //    0      1     2      3    4     5      6      7    8       9      10   11   12   13   14    15    16     17      18   19      20      21     22     23    24    25     26     27     28    29    30       31
-    
-    
-}
-
-int main(void){
+int main(int argc, char *argv[]){
     MV maquina;
     leeArchivo(&maquina);
     ejecucion(&maquina);
     //??? strcmp argv?
     Dissasembler(&maquina);
 
-    return 0;
+    if (strcmp(argv[2], "-d")==0)
+        disassembler(&maquina);
+
+return 0;
 }
