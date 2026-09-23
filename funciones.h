@@ -1,3 +1,6 @@
+#include "funciones.c"
+
+
 typedef struct{
     int base;
     int tamanio;
