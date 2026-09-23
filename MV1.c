@@ -46,24 +46,36 @@ void leeArchivo(MV *maquina){
 }
 
 void ejecucion(MV *maquina){
-    unsigned int IP = maquina->registros[0];
-    unsigned char byte = maquina->memoria[IP];
 
-    maquina->registros[1] =  byte & 0x1F; //OPC
+    while (maquina->registros[0] < maquina->TDS[0].tamanio){
+        unsigned int IP = maquina->registros[0];
+        unsigned char byte = maquina->memoria[IP];
 
-    int tipoB = (byte >> 6) & 0x03;
-    int tipoA = (byte >> 5) & 0x01;
+        maquina->registros[1] =  byte & 0x1F; //OPC
 
-    int pos = IP + 1; // Primer byte después de la cabecera
-    maquina->registros[3] = tipoB << 24; // OP2: guardamos el tipo
-    if (tipoB == 2) {
-        maquina->registros[3] |= (maquina->memoria[pos] << 8)
-                               |
-                               
-                               
-                               maquina->memoria[pos + 1];
+        int tipoB = (byte >> 6) & 0x03;
+        int tipoA = (byte >> 5) & 0x01;
 
-        pos += 2;
+        int pos = IP + 1; // Primer byte después de la cabecera
+        maquina->registros[3] = tipoB << 24; // OP2: guardamos el tipo
+
+    //verifici si tiene A y tiene B (un operando o dos)
+
+        if (tipoB == 1){
+            maquina->registros[3] |= maquina->memoria[pos];
+            pos++;
+        }else
+            if (tipoB == 2) {
+                maquina->registros[3] |= (maquina->memoria[pos] << 8) | maquina->memoria[pos + 1];
+                pos += 2;
+            }else
+                if (tipoB == 3){
+
+                }
+
+    // opA puede ser de tipo 1 o 3? y tipo0???
+
+        maquina->registros[0] = pos; //avanzo con pos 
     }
 }
 
