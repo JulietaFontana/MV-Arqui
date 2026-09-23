@@ -44,6 +44,47 @@ void leeArchivo(MV *maquina, char *nombreArch){
     }
 }
 
+
+int leerOp(MV *maquina,int tipo,int *pos){
+    int valor= tipo<<24;
+    if(tipo==1){
+        valor |= maquina->memoria[*pos];
+        (*pos)++;}
+    else
+        if(tipo==2){
+            valor |= (maquina->memoria[*pos]<<8) | maquina->memoria[*pos+1];
+            (*pos)+=2;}
+        else
+            if(tipo==3){
+                valor |= (maquina->memoria[*pos]<<16) | (maquina->memoria[*pos+1]<<8) | maquina->memoria[*pos+2];
+                (*pos)+=3;}
+    return valor;
+}
+
+Instruccion decodificar(MV *maquina, unsigned int direccionFisica){
+    Instruccion instr = {0};
+    unsigned char byte = maquina->memoria[direccionFisica];
+    int pos = direccionFisica + 1;
+
+    instr.opc = byte & 0x1F;
+    instr.cantOperandos = tablaOPC[instr.opc].cantOperandos;
+
+    if (instr.cantOperandos == 2){
+        int tipoB = (byte >> 6) & 0x03;
+        int tipoA = (byte >> 4) & 0x03;
+        instr.opB = leerOp(maquina, tipoB, &pos);
+        instr.opA = leerOpo(maquina, tipoA, &pos);
+    } else if (instr.cantOperandos == 1){
+        int tipoA = (byte >> 6) & 0x03;
+        instr.opA = leerOp(maquina, tipoA, &pos);
+    }
+
+    instr.longitud = pos - direccionFisica;
+    return instr;
+}
+
+
+
 void ejecutarInstruccion(MV *maquina, int opc, unsigned int opA, unsigned int opB){
     if (tablaOPC[opc].mnemonico == NULL){
         printf("Error: instruccion invalida\n");
@@ -54,73 +95,20 @@ void ejecutarInstruccion(MV *maquina, int opc, unsigned int opA, unsigned int op
 
 
 void ejecucion(MV *maquina){
-    int tipoA, tipoB,OPC;
-
-
+    
     while (maquina->registros[0] < maquina->TDS[0].tamanio){
-        //limpio registros
-        maquina->registros[2] = 0;
-        maquina->registros[3] = 0;
         
         unsigned int IP = maquina->registros[0];
-        unsigned char byte = maquina->memoria[IP];
-        int pos = IP + 1; // Primer byte después de la cabecera
-        
-        OPC = byte & 0x1F;
-        maquina->registros[1] =  OPC;
+        Instruccion instr = decodificar(maquina, IP);
 
-        if (OPC >= 0x10 && OPC <= 0x1E){  //2 operandos
-            tipoB = (byte >> 6);
-            tipoA = (byte >> 4) & 0x03;
-            maquina->registros[3] = tipoB << 24;
-            maquina->registros[2] = tipoA << 24;
-            if (tipoB == 1){
-                maquina->registros[3] |= maquina->memoria[pos];
-                pos++;
-            }else
-                if (tipoB == 2) {
-                    maquina->registros[3] |= (maquina->memoria[pos] << 8) | maquina->memoria[pos + 1];
-                    pos += 2;
-                }else
-                    if (tipoB == 3){
-                        maquina->registros[3] |= (maquina->memoria[pos] << 16) | (maquina->memoria[pos + 1] << 8) | maquina->memoria[pos + 2];
-                        pos += 3;
-                    }
-            if (tipoA == 1){
-                maquina->registros[2] |= maquina->memoria[pos];
-                pos++;
-            }else   //no va a ser tipo ==2
-                if (tipoA == 3){
-                    maquina->registros[2] |= (maquina->memoria[pos] << 16) | (maquina->memoria[pos + 1] << 8) | maquina->memoria[pos + 2];
-                    pos += 3;
-                }
-        }else
-            if(OPC == 0x0F) //ningun operando
-                pos = -1;   // aca iria stop(maquina)
-            else
-                if (OPC >= 0x00 && OPC <= 0x08){    //un operando 
-                    tipoA = (byte>>6);
-                    maquina->registros[2] = tipoA << 24;
-                    if (tipoA == 1){
-                        maquina->registros[2] |= maquina->memoria[pos];
-                        pos++;
-                    }else
-                        if (tipoA == 2) {
-                            maquina->registros[2] |= (maquina->memoria[pos] << 8) | maquina->memoria[pos + 1];
-                            pos += 2;
-                        }else
-                            if (tipoA == 3){
-                                maquina->registros[2] |= (maquina->memoria[pos] << 16) | (maquina->memoria[pos + 1] << 8) | maquina->memoria[pos + 2];
-                                pos += 3;
-                            }
+        maquina->registros[1] = instr.opc;
+        maquina->registros[2] = instr.opA;
+        maquina->registros[3] = instr.opB;
+        maquina->registros[0] = IP + instr.longitud;
 
-                }else
-                    printf("Error: instruccion invalida\n"); 
-                    //deberia cortar procedimiento
-        maquina->registros[0] = pos; //avanzo con pos 
-        //
+        ejecutarInstruccion(maquina, instr.opc, instr.opA, instr.opB);
     }
-}
+}        
 
 
 int main(int argc, char *argv[]){

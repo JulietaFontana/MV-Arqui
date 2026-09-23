@@ -12,7 +12,13 @@ typedef struct {
     FuncionInstruccion ejecutar;
     }  InfoOPC;
 
-
+typedef struct {
+    int opc;
+    int cantOperandos;
+    unsigned int opA;
+    unsigned int opB;
+    int longitud; // cuántos bytes ocupó la instrucción completa!!!
+} Instruccion;
 
 InfoOPC    tablaOPC[32]= {
     [0x00]={"SYS",1,SYS},   [0x01]={"JMP",1,JMP}, [0x02]={"JP",1,JP},
