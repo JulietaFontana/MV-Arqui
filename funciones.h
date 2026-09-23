@@ -38,6 +38,7 @@ void RND (MV *maquina,unsigned char opA, unsigned char opB);
 
 //un solo operando
 void SYS (MV *maquina,unsigned char opA,unsigned char opB);
+void JMP (MV *maquina,unsigned char opA,unsigned char opB);
 void JP (MV *maquina,unsigned char opA,unsigned char opB);
 void JN (MV *maquina,unsigned char opA,unsigned char opB);
 void JZ (MV *maquina,unsigned char opA,unsigned char opB);
