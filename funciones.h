@@ -1,4 +1,4 @@
-#include "funciones.c"
+
 #include <stdint.h>
 
 typedef struct{
@@ -11,6 +11,8 @@ typedef struct{
    TablaSeg TDS[8];
    unsigned int registros[32];
 }MV;
+
+
 
 // todas las funciones teniendo en cuenta que si no tiene operando es stop si tiene dos operandos son algunas funciones y si tiene un operando son otr
 void actualizarCC (MV *maquina,  int valor);

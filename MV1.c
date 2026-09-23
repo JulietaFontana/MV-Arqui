@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "funciones.h"
+#include "OPCodigos.h"
 
 void incializa(MV *maquina, int tamCS){
 
@@ -42,6 +43,15 @@ void leeArchivo(MV *maquina){
 
     }
 }
+
+void ejecutarInstruccion(MV *maquina, int opc, unsigned int opA, unsigned int opB){
+    if (tablaOPC[opc].mnemonico == NULL){
+        printf("Error: instruccion invalida\n");
+        return;
+    }
+    tablaOPC[opc].ejecutar(maquina, opA, opB);
+}
+
 
 void ejecucion(MV *maquina){
     int tipoA, tipoB,OPC;
@@ -110,10 +120,20 @@ void ejecucion(MV *maquina){
 }
 
 
+
+void Disassembler (MV *maquina){
+    char* mnem[26]= {"SYS","JMP", "JP", "JN", "JZ", "JC", "JV", "JNP", "JNN", "JNZ", "NOT","--","--","--","--","STOP","MOV", "ADD", "SUB", "MUL", "DIV", "CMP", "AND", "OR","XOR", "SWAP", "SHL", "SHR", "SAR", "LDL", "LDH", "RND"};
+                //    0      1     2      3    4     5      6      7    8       9      10   11   12   13   14    15    16     17      18   19      20      21     22     23    24    25     26     27     28    29    30       31
+    
+    
+}
+
 int main(void){
     MV maquina;
     leeArchivo(&maquina);
     ejecucion(&maquina);
+    //??? strcmp argv?
+    Dissasembler(&maquina);
 
     return 0;
 }
