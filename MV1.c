@@ -125,7 +125,7 @@ void ejecucion(MV *maquina){
 
 int main(int argc, char *argv[]){
     MV maquina;
-    leeArchivo(&maquina);
+    leeArchivo(&maquina, argv);
     ejecucion(&maquina);
     //??? strcmp argv?
     Dissasembler(&maquina);
