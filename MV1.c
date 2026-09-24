@@ -122,7 +122,7 @@ void Disassembler(MV *maquina){
         if (instr.cantOperandos == 2)
             for (int i=0; i<2; i++){
                 printf(" %d ", leerOp(maquina, instr.tipoA))
-            }
+            };
     } 
     
 }
