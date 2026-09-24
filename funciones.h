@@ -1,6 +1,6 @@
-#include <stdint.h>
 #ifndef FUNCIONES_H
 #define FUNCIONES_H
+#include <stdint.h>
 
 typedef struct{
     uint16_t base;
@@ -24,7 +24,7 @@ int direccionFisica(MV *maquina, unsigned int direccionLogica);
 
 //Si es operacion con dos operandos 
 void MOV (MV *maquina,unsigned int opA, unsigned int opB);
-void ADD (MV *maquina,unsigned int oA, unsigned int opB);
+void ADD (MV *maquina,unsigned int opA, unsigned int opB);
 void SUB (MV *maquina,unsigned int opA, unsigned int opB);
 void MUL (MV *maquina,unsigned int opA, unsigned int opB);
 void DIV (MV *maquina,unsigned int opA, unsigned int opB);

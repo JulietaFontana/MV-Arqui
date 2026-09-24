@@ -34,6 +34,8 @@ int direccionFisica(MV *maquina, unsigned int direccionLogica) {
     return maquina->TDS[segmento].base + desplazamiento;
 }
 
+//setear MAR Y MB
+
 
 //dos operandos 
 void MOV (MV *maquina,unsigned int opA, unsigned int opB){
@@ -42,6 +44,8 @@ void MOV (MV *maquina,unsigned int opA, unsigned int opB){
 
 
 void ADD (MV *maquina,unsigned int opA, unsigned int opB){
+
+
 
 }
 void SUB (MV *maquina,unsigned int opA, unsigned int opB){
@@ -91,34 +95,57 @@ void RND (MV *maquina,unsigned int opA, unsigned int opB){
 void SYS (MV *maquina,unsigned int opA,unsigned int opB){
 
 }
-void JMP (MV *maquina,unsigned int opA,unsigned int opB){
+void JMP (MV *maquina,unsigned int opA,unsigned int opB){ //????
+    maquina->registro[0]=opB;
+} 
 
-}
 void JP (MV *maquina,unsigned int opA,unsigned int opB){
-
+    if (maquina->registro[17] & 0x80000000 == 0){
+        maquina->registro[0]= opB; //IP
+    } 
 }
 void JN (MV *maquina,unsigned int opA,unsigned int opB){
-
+    if (maquina->registro[17] & 0x80000000 == 0x80000000){
+        maquina->registro[0]= opB; //IP
+    } 
 }
 void JZ (MV *maquina,unsigned int opA,unsigned int opB){
+    if (maquina->registro[17] & 0x40000000 != 0x40000000){
+        maquina->registro[0]= opB; //IP
+    } 
 
 }
 void JC (MV *maquina,unsigned int opA,unsigned int opB){
-
+    if (maquina->registro[17] & 0x20000000 == 0x20000000){
+        maquina->registro[0]= opB; //IP
+    } 
 }
 void JV (MV *maquina,unsigned int opA,unsigned int opB){
-
+    if (maquina->registro[17] & 0x10000000 == 0x10000000){
+        maquina->registro[0]= opB; //IP
+        } 
 }
 void JNP (MV *maquina,unsigned int opA,unsigned int opB){
+    if (maquina->registro[17] & 0x80000000 <=0){
+        maquina->registro[0]= opB; //IP
+    } 
 
 }
 void JNN (MV *maquina,unsigned int opA,unsigned int opB){
+    if (maquina->registro[17] & 0x80000000 >=0){
+        maquina->registro[0]= opB; //IP
+    } 
 
 }
 void JNZ (MV *maquina,unsigned int opA,unsigned int opB){
+    if (maquina->registro[17] & 0x80000000 !=0){
+        maquina->registro[0]= opB; //IP
+    } 
 
 }
 void NOT (MV *maquina,unsigned int opA,unsigned int opB){
+    unsigned int valor;
+    
 
 }
 
