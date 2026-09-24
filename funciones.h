@@ -1,5 +1,6 @@
-
 #include <stdint.h>
+#ifndef FUNCIONES_H
+#define FUNCIONES_H
 
 typedef struct{
     uint16_t base;
@@ -56,3 +57,4 @@ void NOT (MV *maquina,unsigned int opA,unsigned int opB);
 //sin operandos
 void STOP(MV *maquina,unsigned int opA,unsigned int opB);
 
+#endif
