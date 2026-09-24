@@ -70,12 +70,12 @@ Instruccion decodificar(MV *maquina, unsigned int direccionFisica){
     instr.cantOperandos = tablaOPC[instr.opc].cantOperandos;
 
     if (instr.cantOperandos == 2){
-        int tipoB = (byte >> 6) & 0x03;
-        int tipoA = (byte >> 4) & 0x03;
+        instr.tipoB = (byte >> 6) & 0x03;
+        instr.tipoA = (byte >> 4) & 0x03;
         instr.opB = leerOp(maquina, tipoB, &pos);
         instr.opA = leerOp(maquina, tipoA, &pos);
     } else if (instr.cantOperandos == 1){
-        int tipoA = (byte >> 6) & 0x03;
+        instr.tipoA = (byte >> 6) & 0x03;
         instr.opA = leerOp(maquina, tipoA, &pos);
     }
 
@@ -109,8 +109,22 @@ void ejecucion(MV *maquina){
         ejecutarInstruccion(maquina, instr.opc, instr.opA, instr.opB);
     }
 }        
-void Dissasembler(MV *maquina){
-
+void Disassembler(MV *maquina){
+    int direccion = 0 ;
+    while (direccion< maquina->TDS[0].tamanio){
+        Instruccion instr = decodificar(maquina, direccion);
+        
+        printf("[%04X] ", direccion);
+        for( int i=0; i< instr.longitud; i++)
+            printf("%02X ", maquina->memoria[direccion + i]);
+        
+        printf(" | %s ", tablaOPC[instr.opc].mnemonico);
+        if (instr.cantOperandos == 2)
+            for (int i=0; i<2; i++){
+                printf(" %d ", leerOp(maquina, instr.tipoA))
+            }
+    } 
+    
 }
 
 int main(int argc, char *argv[]){
@@ -119,7 +133,7 @@ int main(int argc, char *argv[]){
     ejecucion(&maquina);
 
     if (strcmp(argv[2], "-d")==0)
-        Dissasembler(&maquina);
+        Disassembler(&maquina);
 
 
 return 0;

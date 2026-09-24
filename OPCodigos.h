@@ -15,6 +15,8 @@ typedef struct {
 typedef struct {
     int opc;
     int cantOperandos;
+    unsigned short int tipoA;
+    unsigned short int tipoB;
     unsigned int opA;
     unsigned int opB;
     int longitud; // cuántos bytes ocupó la instrucción completa!!!
