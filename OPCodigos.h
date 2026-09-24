@@ -23,9 +23,9 @@ typedef struct {
 } Instruccion;
 
 typedef struct {
-    int numReg
-    char *nombre;
-}
+    int numReg;
+    const char *nombre;
+}InfoRegistros;
 
 
 InfoOPC    tablaOPC[32]= {
@@ -41,10 +41,12 @@ InfoOPC    tablaOPC[32]= {
     [0x1C]={"SAR",2,SAR},   [0x1D]={"LDL",2,LDL}, [0x1E]={"LDH",2,LDH},
     [0x1F]={"RND",2,RND}
 };
-#endif
 
-Inforegistos   tablaReg[]={[0]="IP",  [1]="OPC", [2]="OP1", [3]="OP2",
+
+char*  tablaReg[32]={[0]="IP",  [1]="OPC", [2]="OP1", [3]="OP2",
     [4]="LAR", [5]="MAR", [6]="MBR",
     [10]="EAX",[11]="EBX",[12]="ECX",[13]="EDX",[14]="EEX",[15]="EFX",
     [16]="AC", [17]="CC",
-    [26]="CS", [27]="DS",};
+    [26]="CS", [27]="DS"};
+
+#endif
