@@ -61,10 +61,10 @@ int leerOp(MV *maquina,int tipo,int *pos){
     return valor;
 }
 
-Instruccion decodificar(MV *maquina, unsigned int direccionFisica){
+Instruccion decodificar(MV *maquina, unsigned int direcFisica){
     Instruccion instr = {0};
-    unsigned char byte = maquina->memoria[direccionFisica];
-    int pos = direccionFisica + 1;
+    unsigned char byte = maquina->memoria[direcFisica];
+    int pos = direcFisica + 1;
 
     instr.opc = byte & 0x1F;
     instr.cantOperandos = tablaOPC[instr.opc].cantOperandos;
@@ -72,14 +72,14 @@ Instruccion decodificar(MV *maquina, unsigned int direccionFisica){
     if (instr.cantOperandos == 2){
         instr.tipoB = (byte >> 6) & 0x03;
         instr.tipoA = (byte >> 4) & 0x03;
-        instr.opB = leerOp(maquina, tipoB, &pos);
-        instr.opA = leerOp(maquina, tipoA, &pos);
+        instr.opB = leerOp(maquina, instr.tipoB, &pos);
+        instr.opA = leerOp(maquina, instr.tipoA, &pos);
     } else if (instr.cantOperandos == 1){
         instr.tipoA = (byte >> 6) & 0x03;
-        instr.opA = leerOp(maquina, tipoA, &pos);
+        instr.opA = leerOp(maquina, instr.tipoA, &pos);
     }
 
-    instr.longitud = pos - direccionFisica;
+    instr.longitud = pos - direcFisica;
     return instr;
 }
 
@@ -111,18 +111,39 @@ void ejecucion(MV *maquina){
 }        
 void Disassembler(MV *maquina){
     int direccion = 0 ;
-    while (direccion< maquina->TDS[0].tamanio){
+    while (direccion < maquina->TDS[0].tamanio){
         Instruccion instr = decodificar(maquina, direccion);
         
         printf("[%04X] ", direccion);
         for( int i=0; i< instr.longitud; i++)
             printf("%02X ", maquina->memoria[direccion + i]);
+        for (int i = instr.longitud; i < 7; i++)
+            printf("   ");
         
         printf(" | %s ", tablaOPC[instr.opc].mnemonico);
-        if (instr.cantOperandos == 2)
-            for (int i=0; i<2; i++){
-                printf(" %d ", leerOp(maquina, instr.tipoA))
-            }
+        if (instr.cantOperandos == 2){
+                if (instr.tipoA == 1)
+                    printf(" %s ", tablaReg[instr.opA & 0x1F]);
+                else if (instr.tipoA == 3)
+                    printf("[%s + %d]", tablaReg[instr.opA & 0x1F], instr.opA >> 8 & 0xFFFF);
+                printf(" , ");
+                if (instr.tipoB == 1)
+                    printf(" %s ", tablaReg[instr.opB & 0x1F]);
+                else if (instr.tipoB == 2)
+                    printf(" %d ", instr.opB & 0xFFFF);
+                else if (instr.tipoB == 3)
+                    printf("[%s + %d]", tablaReg[instr.opB & 0x1F], instr.opB >> 8 & 0xFFFF);
+        }
+        else if (instr.cantOperandos == 1){
+            if (instr.tipoA == 1)
+                printf(" %s ", tablaReg[instr.opA & 0x1F]);
+            else if (instr.tipoA == 2)
+                printf(" %d ", instr.opA & 0xFFFF);
+            else if (instr.tipoA == 3)
+                printf("[%s + %d]", tablaReg[instr.opA & 0x1F], instr.opA >> 8 & 0xFFFF);
+        }
+        printf("\n");
+        direccion += instr.longitud;
     } 
     
 }
