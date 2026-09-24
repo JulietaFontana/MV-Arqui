@@ -1,4 +1,5 @@
 #include "funciones.h"
+#include <stdio.h>
 
 //ACTUALIZA CC
 void actualizarCC (MV *maquina, int valor){
@@ -122,6 +123,6 @@ void NOT (MV *maquina,unsigned int opA,unsigned int opB){
 }
 
 //sin operandos 
-void stop(MV *maquina,unsigned int opA,unsigned int opB) {
+void STOP(MV *maquina,unsigned int opA,unsigned int opB) {
     maquina->registros[0] = 0xFFFFFFFF;
 }

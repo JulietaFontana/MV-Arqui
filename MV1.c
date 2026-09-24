@@ -73,7 +73,7 @@ Instruccion decodificar(MV *maquina, unsigned int direccionFisica){
         int tipoB = (byte >> 6) & 0x03;
         int tipoA = (byte >> 4) & 0x03;
         instr.opB = leerOp(maquina, tipoB, &pos);
-        instr.opA = leerOpo(maquina, tipoA, &pos);
+        instr.opA = leerOp(maquina, tipoA, &pos);
     } else if (instr.cantOperandos == 1){
         int tipoA = (byte >> 6) & 0x03;
         instr.opA = leerOp(maquina, tipoA, &pos);
@@ -109,17 +109,18 @@ void ejecucion(MV *maquina){
         ejecutarInstruccion(maquina, instr.opc, instr.opA, instr.opB);
     }
 }        
+void Dissasembler(MV *maquina){
 
+}
 
 int main(int argc, char *argv[]){
     MV maquina;
-    leeArchivo(&maquina, argv);
+    leeArchivo(&maquina, argv[1]);
     ejecucion(&maquina);
-    //??? strcmp argv?
-    Dissasembler(&maquina);
 
     if (strcmp(argv[2], "-d")==0)
-        disassembler(&maquina);
+        Dissasembler(&maquina);
+
 
 return 0;
 }
