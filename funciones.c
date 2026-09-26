@@ -3,11 +3,11 @@
 
 //ACTUALIZA CC
 void actualizarCC (MV *maquina, int valor){
-    maquina->registros[17] &= 0x0000000;
+    maquina->registros[17] &= 0x00000000;
     if (valor<0)
-        maquina->registros[17] |= 0x8000000; // se activa si es negativo 
+        maquina->registros[17] |= 0x80000000; // se activa si es negativo 
     if (valor==0)
-        maquina->registros[17] |= 0x4000000; // se activa si es cero)
+        maquina->registros[17] |= 0x40000000; // se activa si es cero)
     //actualizar c y overflow despues-> caary si el resultado esta bien pero el resultado es mayor a la capacidad que tengo pero si es overflow el resultado esta mal por desbordamiento 
     // la cuenta se almacena en 2 registros en lugar de uno entonces evaluo el otro registro que cae lo que no entra en el primer -> variable de 64 bits! y veo en ese valor si hay carry (> 1111) unsigned int para ver si pierdo algun bit 
     //OVERFLOW: cuenta con signo propaga el primer bit que es de signo y variable de 64bits 
@@ -36,10 +36,24 @@ int direccionFisica(MV *maquina, unsigned int direccionLogica) {
     return maquina->TDS[segmento].base + desplazamiento;
 }
 
-void memoria(MV *maquina, unsigned int direcLogica){
+int accesoamemoria(MV *maquina, unsigned int direcLogica,int escribir,unsigned int valorEscribir){
+    int cantbytes=4;
     maquina->registros[4] = direcLogica; //LAR
-    maquina->registros[5] = (4 << 24) | direccionFisica(maquina,direcLogica); //MAR
-   //maquina->registros[6] = MBR? Lee o escribe? derecha o izq
+    maquina->registros[5] = (cantbytes << 24) | (int)dirfisica=direccionFisica(maquina,direcLogica); //MAR
+
+    if (escribir){
+        maquina->registros[6]=valorEscribir;//MBR
+        for(int i=0;i<cantbytes;i++) //cantbytes=4
+            maquina->memoria[dirfisica+i] = (valorEscribir>> (8*(cantbytes-1-i)& 0x0FF))
+        return 0;
+        }       
+    else {
+        unsigned int dato=0;
+        for (int i=0;i< cantbytes;i++)
+            dato=(dato<<8) | maquina-> memoria[dirfisica+i]
+        maquina->registros[6]=dato; //MBR
+        return dato;
+        }   
 }
 
 
