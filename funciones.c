@@ -33,24 +33,25 @@ int direccionFisica(MV *maquina, unsigned int direccionLogica) {
                 return -1;
             }
 
-    return maquina->TDS[segmento].base + desplazamiento;
+    return maquina->TDS[segmento].base + desplazamiento;    
 }
 
 int accesoamemoria(MV *maquina, unsigned int direcLogica,int escribir,unsigned int valorEscribir){
     int cantbytes=4;
     maquina->registros[4] = direcLogica; //LAR
-    maquina->registros[5] = (cantbytes << 24) | (int)dirfisica=direccionFisica(maquina,direcLogica); //MAR
+    int dirfisica=direccionFisica(maquina,direcLogica);
+    maquina->registros[5] = (cantbytes << 24) | dirfisica; //MAR
 
     if (escribir){
         maquina->registros[6]=valorEscribir;//MBR
         for(int i=0;i<cantbytes;i++) //cantbytes=4
-            maquina->memoria[dirfisica+i] = (valorEscribir>> (8*(cantbytes-1-i)& 0x0FF))
+            maquina->memoria[dirfisica+i] = (valorEscribir>> (8*(cantbytes-1-i)))& 0x0FF;
         return 0;
         }       
     else {
         unsigned int dato=0;
         for (int i=0;i< cantbytes;i++)
-            dato=(dato<<8) | maquina-> memoria[dirfisica+i]
+            dato=(dato<<8) | maquina-> memoria[dirfisica+i];
         maquina->registros[6]=dato; //MBR
         return dato;
         }   
@@ -64,11 +65,12 @@ int obtenerValor(MV *maquina, unsigned int op){
     }else if (tipo == 2){
         return op & 0xFFFF;
     }else if(tipo == 3){
-        int offset = op >> 8;
+        int offset = op >> 8 & 0xFFFF;
         int codReg = op & 0x1F;
         int direcLogica = maquina->registros[codReg] + offset;
         return accesoamemoria(maquina, direcLogica, 0,0);
     }
+     return 0;
 }
 void guardarValor(MV *maquina, unsigned int op, unsigned int valor){
     int tipo = op >> 24;
@@ -77,7 +79,7 @@ void guardarValor(MV *maquina, unsigned int op, unsigned int valor){
         int reg = op & 0x1F;
         maquina->registros[reg] = valor;
     }else if (tipo ==3){
-        int offset = op >> 8;
+        int offset = op >> 8 & 0xFFFF;
         int codReg = op & 0x1F;
         int direcLogica = maquina->registros[codReg] + offset;
         accesoamemoria(maquina, direcLogica,1,valor);
@@ -101,33 +103,102 @@ void ADD (MV *maquina ){
 
 }
 void SUB (MV *maquina ){ //OPERANDO B TENGO QUE SUMARLE UNO Y SUMAR AL RESTO!!
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
+    int resultado = valorA - valorB;
 
+    guardarValor(maquina, maquina->registros[2], resultado);
+    actualizarCC(maquina, resultado);
 }
+
 void MUL (MV *maquina ){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
+    int resultado = valorA * valorB;
 
+    guardarValor(maquina, maquina->registros[2], resultado);
+    actualizarCC(maquina, resultado);
 }
+
 void DIV (MV *maquina ){
-
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
+    if (valorB == 0){
+        printf("Error: division por cero\n");
+        maquina->registros[0] = 0xFFFFFFFF;
+        return;
+    }else{
+        int resultado = valorA / valorB;
+        guardarValor(maquina, maquina->registros[2], resultado);
+        actualizarCC(maquina, resultado);
+    }
 }
+
 void CMP (MV *maquina ){
 
 }
 void AND (MV *maquina ){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
 
+    int resultado = valorA & valorB;
+
+    guardarValor(maquina, maquina->registros[2], resultado);
+
+    actualizarCC(maquina, resultado);
 }
+
 void OR (MV *maquina ){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
 
+    int resultado = valorA | valorB;
+
+    guardarValor(maquina, maquina->registros[2], resultado);
+
+    actualizarCC(maquina, resultado);
 }
+
 void XOR (MV *maquina ){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
 
+    int resultado = valorA ^ valorB;
+
+    guardarValor(maquina, maquina->registros[2], resultado);
+
+    actualizarCC(maquina, resultado);
 }
-void SWAP (MV *maquina ){
 
+void SWAP (MV *maquina ){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
+
+    guardarValor(maquina, maquina->registros[2], valorB);
+    guardarValor(maquina, maquina->registros[3], valorA);
+
+    actualizarCC(maquina, valorB);
 }
 void SHL (MV *maquina ){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
+
+    int resultado = valorA << valorB;
+
+    guardarValor(maquina, maquina->registros[2], resultado);
+
+    actualizarCC(maquina, resultado);
 
 }
 void SHR (MV *maquina ){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
+
+    int resultado = valorA >> valorB;
+
+    guardarValor(maquina, maquina->registros[2], resultado);
+
+    actualizarCC(maquina, resultado);
 
 }
 void SAR (MV *maquina ){
