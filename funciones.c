@@ -156,6 +156,27 @@ void MUL (MV *maquina ){
 
 }
 
+void DIV(MV *maquina){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
+
+    if (valorB == 0){
+        printf("Error: division por cero\n");
+        maquina->registros[0] = 0xFFFFFFFF;
+        return;
+    }
+
+    int resultado = valorA / valorB;
+    int resto = valorA % valorB;
+
+    guardarValor(maquina, maquina->registros[2], resultado);
+
+    maquina->registros[16] = resto; // AC
+
+    actualizarCC(maquina, resultado);
+    //falta carry y overflow
+}
+
 void CMP (MV *maquina ){
     int valorA = obtenerValor(maquina, maquina->registros[2]);
     int valorB = obtenerValor(maquina, maquina->registros[3]);

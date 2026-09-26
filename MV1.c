@@ -102,7 +102,7 @@ void ejecucion(MV *maquina){
         maquina->registros[3] = instr.opB;
         maquina->registros[0] = IP + instr.longitud;
 
-        tablaOPC[instr.opc].ejecutar(maquina, instr.opA, instr.opB);
+        tablaOPC[instr.opc].ejecutar(maquina);
     }
 }    
 
