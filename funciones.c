@@ -1,14 +1,20 @@
 #include "funciones.h"
+#include <stdlib.h> 
+#include <ctype.h> 
 #include <stdio.h>
-#include <stdlib.h>
 
 //ACTUALIZA CC
 void actualizarCC (MV *maquina, int valor){
     maquina->registros[17] &= 0x00000000;
+
     if (valor<0)
         maquina->registros[17] |= 0x80000000; // se activa si es negativo 
     if (valor==0)
         maquina->registros[17] |= 0x40000000; // se activa si es cero)
+    //actualizar c y overflow despues-> caary si el resultado esta bien pero el resultado es mayor a la capacidad que tengo pero si es overflow el resultado esta mal por desbordamiento 
+    // la cuenta se almacena en 2 registros en lugar de uno entonces evaluo el otro registro que cae lo que no entra en el primer -> variable de 64 bits! y veo en ese valor si hay carry (> 1111) unsigned int para ver si pierdo algun bit 
+    //OVERFLOW: cuenta con signo propaga el primer bit que es de signo y variable de 64bits 
+    //CARRY SIN SIGNO Y ME FIJO SI QUEDA ALGO EN 64 Y OVERFLOW PROPAGO EL SIGNO Y COMPARO QUE SEAN IGUALES 
 }
 
 //DIRECCION LOGICA A FISICA
@@ -86,8 +92,9 @@ void guardarValor(MV *maquina, unsigned int op, unsigned int valor){
 
 //dos operandos 
 void MOV (MV *maquina ){
-    int valor = obtenerValor(maquina, maquina->registros[3]);
-    long long resultado64= (long long)(unsigned int) valor;
+    unsigned int valor = obtenerValor(maquina, maquina->registros[3]);
+   
+    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
     guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
@@ -96,7 +103,7 @@ void MOV (MV *maquina ){
     if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x20000000; //ACTIVA CARRY
 
-    if ((long long)(int)resultado != resultado64)
+    if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x10000000; //ACTIVA OVERFLOW
 }
 
@@ -114,7 +121,7 @@ void ADD (MV *maquina ){
     if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x20000000; //ACTIVA CARRY
 
-    if ((long long)(int)resultado != resultado64)
+    if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x10000000; //ACTIVA OVERFLOW
 
 }
@@ -123,8 +130,9 @@ void ADD (MV *maquina ){
 void SUB (MV *maquina ){ //OPERANDO B TENGO QUE SUMARLE UNO Y SUMAR AL RESTO!!
     int valorA = obtenerValor(maquina, maquina->registros[2]);
     int valorB = obtenerValor(maquina, maquina->registros[3]);
+    int resultado = valorA - valorB;
 
-    long long resultado64= (long long)(unsigned int)valorA - (long long)(unsigned int)valorB;
+    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
     guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
@@ -133,7 +141,7 @@ void SUB (MV *maquina ){ //OPERANDO B TENGO QUE SUMARLE UNO Y SUMAR AL RESTO!!
     if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x20000000; //ACTIVA CARRY
 
-    if ((long long)(int)resultado != resultado64)
+    if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x10000000; //ACTIVA OVERFLOW
 
 }
@@ -141,8 +149,9 @@ void SUB (MV *maquina ){ //OPERANDO B TENGO QUE SUMARLE UNO Y SUMAR AL RESTO!!
 void MUL (MV *maquina ){
     int valorA = obtenerValor(maquina, maquina->registros[2]);
     int valorB = obtenerValor(maquina, maquina->registros[3]);
+    int resultado = valorA * valorB;
 
-    long long resultado64= (long long)(unsigned int)valorA * (long long)(unsigned int)valorB;
+    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
     guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
@@ -151,7 +160,21 @@ void MUL (MV *maquina ){
     if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x20000000; //ACTIVA CARRY
 
-    if ((long long)(int)resultado != resultado64)
+    if ((long long)(unsigned int)resultado != resultado64)
+        maquina->registros[17] |= 0x10000000; //ACTIVA OVERFLOW
+
+}
+
+    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
+    int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
+
+    guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
+    actualizarCC(maquina,resultado);
+
+    if ((long long)(unsigned int)resultado != resultado64)
+        maquina->registros[17] |= 0x20000000; //ACTIVA CARRY
+
+    if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x10000000; //ACTIVA OVERFLOW
 
 }
@@ -183,12 +206,13 @@ void CMP (MV *maquina ){
     long long resultado64= (long long)(unsigned int)valorA - (long long)(unsigned int)valorB;
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
+    guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
     actualizarCC(maquina,resultado);
 
     if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x20000000; //ACTIVA CARRY
 
-    if ((long long)(int)resultado != resultado64)
+    if ((long long)(unsigned int)resultado != resultado64)
         maquina->registros[17] |= 0x10000000; //ACTIVA OVERFLOW
 
 }
@@ -246,7 +270,7 @@ void SHL (MV *maquina ){
 
 }
 void SHR (MV *maquina ){
-    unsigned int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
     int valorB = obtenerValor(maquina, maquina->registros[3]);
 
     int resultado = valorA >> valorB;
@@ -257,47 +281,89 @@ void SHR (MV *maquina ){
 
 }
 void SAR (MV *maquina ){
-    unsigned int valorA = (unsigned int) obtenerValor(maquina, maquina->registros[2]);
-    int valorB = obtenerValor(maquina, maquina->registros[3]);
 
-    unsigned int resultado = valorA;
-
-    for (int i = 0; i < valorB; i++){
-
-        if (resultado & 0x80000000) // si el bit de signo era 1
-            resultado = (resultado >> 1) | 0x80000000;
-        else
-            resultado = resultado >> 1;
-    }
-    guardarValor(maquina, maquina->registros[2], resultado);
-
-    actualizarCC(maquina, resultado);
 }
 void LDH (MV *maquina ){
-    int valorA = obtenerValor(maquina, maquina->registros[2]);
-    int valorB = obtenerValor(maquina, maquina->registros[3]);
 
-    int resultado = (valorB & 0x0000FFFF) << 16 | (valorA & 0x0000FFFF);
-    guardarValor(maquina, maquina->registros[2], resultado);
 }
 void LDL (MV *maquina ){
-    int valorA = obtenerValor(maquina, maquina->registros[2]);
-    int valorB = obtenerValor(maquina, maquina->registros[3]);
 
-    int resultado = (valorA & 0xFFFF0000) | (valorB & 0x0000FFFF);
-
-    guardarValor(maquina, maquina->registros[2], resultado);
 }
 void RND (MV *maquina ){
-    int limite = obtenerValor(maquina, maquina->registros[3]);
-    int resultado = rand() % (limite + 1);
-    guardarValor(maquina, maquina->registros[2], resultado);
+
 }
 
 //un operando 
-void SYS (MV *maquina ){
 
+void imprimirBinario(unsigned int valor, int cantBits){
+    printf("0b");
+    for (int i = cantBits - 1; i >= 0; i--)
+        printf("%d", (valor >> i) & 0x1);
+    printf(" ");
 }
+
+
+void SYS (MV *maquina ){
+    int num = obtenerValor(maquina, maquina->registros[2]);
+    unsigned int eax = maquina->registros[10];
+    unsigned int edx = maquina->registros[13];
+    unsigned int ecx = maquina->registros[12];
+
+    int cantidad = ecx & 0xFFFF;
+    int tamanio  = (ecx >> 16) & 0xFFFF;
+
+        for (int i = 0; i < cantidad; i++){
+        unsigned int dirLogica = edx + i * tamanio;
+        int dirFis = direccionFisica(maquina, dirLogica);
+        
+        printf("[%04X]: ",dirFis);
+
+        if (num==1){ //READ
+            int valorLeido=0;
+            if (eax & 0x02){
+                char c;
+                scanf("%c", &c);
+                valorLeido= (unsigned char) c;   
+            }
+            else if (eax & 0x10){
+                    char texto[64];
+                    scanf("%63s", texto);
+                    valorLeido = (int) strtol(texto, NULL, 2);
+                }
+            else if (eax & 0x08){
+                scanf("%x", &valorLeido);
+            }
+            else if (eax & 0x04){
+                scanf("%o", &valorLeido);
+            }
+            else {
+                scanf("%d", &valorLeido);
+            }
+
+            for (int b = 0; b < tamanio; b++)
+                maquina->memoria[dirFis + b] = (valorLeido >> (8*(tamanio-1-b))) & 0xFF;
+        }
+        else { // WRITE
+            unsigned int valor = 0;
+            for (int b = 0; b < tamanio; b++)
+                valor = (valor << 8) | maquina->memoria[dirFis + b];
+
+            if (eax & 0x10) imprimirBinario(valor, tamanio * 8);
+            if (eax & 0x08) printf("0x%X ", valor);
+            if (eax & 0x04) printf("0o%o ", valor);
+            if (eax & 0x02){
+                unsigned char c = valor & 0xFF;
+                printf("%c ", isprint(c) ? c : '.');
+            }
+            if (eax & 0x01) printf("%d ", (int) valor);
+        }
+
+        printf("\n");
+    
+            }
+}
+
+
 void JMP (MV *maquina ){ //????
     maquina->registros[0]= maquina->registros[2] & 0x0FFF;
 } 
@@ -341,19 +407,15 @@ void JNN (MV *maquina ){
 
 }
 void JNZ (MV *maquina ){
-    if ( (maquina->registros[17] & 0x40000000) !=0){
+    if ( (maquina->registros[17] & 0x80000000) !=0){
         maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
     } 
 
 }
 void NOT (MV *maquina ){
-    int valor = obtenerValor(maquina, maquina->registros[2]);
+    unsigned int valor;
+    
 
-    int resultado = ~valor;
-
-    guardarValor(maquina, maquina->registros[2], resultado);
-
-    actualizarCC(maquina, resultado);
 }
 
 //sin operandos 
