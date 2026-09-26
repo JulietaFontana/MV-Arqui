@@ -1,4 +1,12 @@
 {
     "C_Cpp.default.compilerPath": "cl.exe",
-    "C_Cpp.errorSquiggles": "disabled"
+  "C_Cpp.autocomplete": "disabled",
+  "editor.quickSuggestions": {
+    "comments": "off",
+    "strings": "off",
+    "other": "off"
+  },
+  "editor.suggestOnTriggerCharacters": false,
+  "editor.inlineSuggest.enabled": false,
+  "editor.acceptSuggestionOnEnter": "off"
 }

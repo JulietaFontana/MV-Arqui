@@ -8,10 +8,10 @@ void actualizarCC (MV *maquina, int valor){
         maquina->registros[17] |= 0x8000000; // se activa si es negativo 
     if (valor==0)
         maquina->registros[17] |= 0x4000000; // se activa si es cero)
-    //actualizar c y overflow despues
-    //para overflow hacer operacion con signo en el doble de tamaño y verifico que me de lo msimo 
-    //para el carry usar 2 registros y unsigned
-    
+    //actualizar c y overflow despues-> caary si el resultado esta bien pero el resultado es mayor a la capacidad que tengo pero si es overflow el resultado esta mal por desbordamiento 
+    // la cuenta se almacena en 2 registros en lugar de uno entonces evaluo el otro registro que cae lo que no entra en el primer -> variable de 64 bits! y veo en ese valor si hay carry (> 1111) unsigned int para ver si pierdo algun bit 
+    //OVERFLOW: cuenta con signo propaga el primer bit que es de signo y variable de 64bits 
+    //CARRY SIN SIGNO Y ME FIJO SI QUEDA ALGO EN 64 Y OVERFLOW PROPAGO EL SIGNO Y COMPARO QUE SEAN IGUALES 
 }
 
 //DIRECCION LOGICA A FISICA
@@ -54,7 +54,7 @@ void ADD (MV *maquina,unsigned int opA, unsigned int opB){
 
 
 }
-void SUB (MV *maquina,unsigned int opA, unsigned int opB){
+void SUB (MV *maquina,unsigned int opA, unsigned int opB){ //OPERANDO B TENGO QUE SUMARLE UNO Y SUMAR AL RESTO!!
 
 }
 void MUL (MV *maquina,unsigned int opA, unsigned int opB){
