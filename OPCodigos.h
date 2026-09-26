@@ -4,7 +4,7 @@
 
 #include "funciones.h"
 
-typedef void (*FuncionInstruccion)(MV *maquina, unsigned int opA, unsigned int opB); 
+typedef void (*FuncionInstruccion)(MV *maquina); 
 
 typedef struct {
     const char *mnemonico;

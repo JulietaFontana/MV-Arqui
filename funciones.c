@@ -179,9 +179,31 @@ void MUL (MV *maquina ){
 
 }
 
-void CMP (MV *maquina ){
+void DIV(MV *maquina){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
 
-    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
+    if (valorB == 0){
+        printf("Error: division por cero\n");
+        maquina->registros[0] = 0xFFFFFFFF;
+        return;
+    }
+
+    int resultado = valorA / valorB;
+    int resto = valorA % valorB;
+
+    guardarValor(maquina, maquina->registros[2], resultado);
+
+    maquina->registros[16] = resto; // AC
+
+    actualizarCC(maquina, resultado);
+    //falta carry y overflow
+}
+
+void CMP (MV *maquina ){
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
+    long long resultado64= (long long)(unsigned int)valorA - (long long)(unsigned int)valorB;
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
     guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
