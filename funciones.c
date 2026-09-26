@@ -9,6 +9,8 @@ void actualizarCC (MV *maquina, int valor){
     if (valor==0)
         maquina->registros[17] |= 0x4000000; // se activa si es cero)
     //actualizar c y overflow despues
+    //para overflow hacer operacion con signo en el doble de tamaño y verifico que me de lo msimo 
+    //para el carry usar 2 registros y unsigned
     
 }
 
@@ -32,6 +34,12 @@ int direccionFisica(MV *maquina, unsigned int direccionLogica) {
             }
 
     return maquina->TDS[segmento].base + desplazamiento;
+}
+
+void memoria(MV *maquina, unsigned int direcLogica){
+    maquina->registros[4] = direcLogica; //LAR
+    maquina->registros[5] = (4 << 24) | direccionFisica(maquina,direcLogica); //MAR
+   //maquina->registros[6] = MBR? Lee o escribe? derecha o izq
 }
 
 
@@ -124,5 +132,6 @@ void NOT (MV *maquina,unsigned int opA,unsigned int opB){
 
 //sin operandos 
 void STOP(MV *maquina,unsigned int opA,unsigned int opB) {
+    printf("SE EJECUTO STOP"); //cartel para chequear
     maquina->registros[0] = 0xFFFFFFFF;
 }
