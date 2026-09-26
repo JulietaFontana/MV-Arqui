@@ -20,41 +20,43 @@ void actualizarCC (MV *maquina,  int valor);
 
 //DIRECCION LOGICA A FISICA
 int direccionFisica(MV *maquina, unsigned int direccionLogica);
-
+int obtenerValor(MV *maquina, unsigned int op);
+void guardarValor(MV *maquina, unsigned int op, unsigned int valor);
+int accesoamemoria(MV *maquina, unsigned int direcLogica, int escribir, unsigned int valorEscribir);
 
 //Si es operacion con dos operandos 
-void MOV (MV *maquina,unsigned int opA, unsigned int opB);
-void ADD (MV *maquina,unsigned int opA, unsigned int opB);
-void SUB (MV *maquina,unsigned int opA, unsigned int opB);
-void MUL (MV *maquina,unsigned int opA, unsigned int opB);
-void DIV (MV *maquina,unsigned int opA, unsigned int opB);
-void CMP (MV *maquina,unsigned int opA, unsigned int opB);
-void AND (MV *maquina,unsigned int opA, unsigned int opB);
-void OR (MV *maquina,unsigned int opA, unsigned int opB);
-void XOR (MV *maquina,unsigned int opA, unsigned int opB);
-void SWAP (MV *maquina,unsigned int opA, unsigned int opB);
-void SHL (MV *maquina,unsigned int opA, unsigned int opB);
-void SHR (MV *maquina,unsigned int opA, unsigned int opB);
-void SAR (MV *maquina,unsigned int opA, unsigned int opB);
-void LDH (MV *maquina,unsigned int opA, unsigned int opB);
-void LDL (MV *maquina,unsigned int opA, unsigned int opB);
-void RND (MV *maquina,unsigned int opA, unsigned int opB);
+void MOV (MV *maquina );
+void ADD (MV *maquina );
+void SUB (MV *maquina );
+void MUL (MV *maquina );
+void DIV (MV *maquina );
+void CMP (MV *maquina );
+void AND (MV *maquina );
+void OR (MV *maquina );
+void XOR (MV *maquina );
+void SWAP (MV *maquina );
+void SHL (MV *maquina );
+void SHR (MV *maquina );
+void SAR (MV *maquina );
+void LDH (MV *maquina );
+void LDL (MV *maquina );
+void RND (MV *maquina );
 
 //un solo operando
-void SYS (MV *maquina,unsigned int opA,unsigned int opB);
-void JMP (MV *maquina,unsigned int opA,unsigned int opB);
-void JP (MV *maquina,unsigned int opA,unsigned int opB);
-void JN (MV *maquina,unsigned int opA,unsigned int opB);
-void JZ (MV *maquina,unsigned int opA,unsigned int opB);
-void JC (MV *maquina,unsigned int opA,unsigned int opB);
-void JV (MV *maquina,unsigned int opA,unsigned int opB);
-void JNP (MV *maquina,unsigned int opA,unsigned int opB);
-void JNN (MV *maquina,unsigned int opA,unsigned int opB);
-void JNZ (MV *maquina,unsigned int opA,unsigned int opB);
-void NOT (MV *maquina,unsigned int opA,unsigned int opB);
+void SYS (MV *maquina);
+void JMP (MV *maquina);
+void JP (MV *maquina);
+void JN (MV *maquina);
+void JZ (MV *maquina);
+void JC (MV *maquina);
+void JV (MV *maquina);
+void JNP (MV *maquina);
+void JNN (MV *maquina);
+void JNZ (MV *maquina);
+void NOT (MV *maquina);
 
 
 //sin operandos
-void STOP(MV *maquina,unsigned int opA,unsigned int opB);
+void STOP(MV *maquina);
 
 #endif
