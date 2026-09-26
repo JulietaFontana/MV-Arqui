@@ -36,7 +36,11 @@ int direccionFisica(MV *maquina, unsigned int direccionLogica) {
     return maquina->TDS[segmento].base + desplazamiento;
 }
 
-//setear MAR Y MB
+void memoria(MV *maquina, unsigned int direcLogica){
+    maquina->registros[4] = direcLogica; //LAR
+    maquina->registros[5] = (4 << 24) | direccionFisica(maquina,direcLogica); //MAR
+   //maquina->registros[6] = MBR? Lee o escribe? derecha o izq
+}
 
 
 //dos operandos 
@@ -153,5 +157,6 @@ void NOT (MV *maquina,unsigned int opA,unsigned int opB){
 
 //sin operandos 
 void STOP(MV *maquina,unsigned int opA,unsigned int opB) {
+    printf("SE EJECUTO STOP"); //cartel para chequear
     maquina->registros[0] = 0xFFFFFFFF;
 }
