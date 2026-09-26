@@ -1,6 +1,7 @@
 #include "funciones.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 //ACTUALIZA CC
 void actualizarCC (MV *maquina, int valor){
@@ -295,8 +296,71 @@ void RND (MV *maquina ){
 }
 
 //un operando 
-void SYS (MV *maquina ){
+void imprimirBinario(unsigned int valor, int cantBits){
+    printf("0b");
+    for (int i = cantBits - 1; i >= 0; i--)
+        printf("%d", (valor >> i) & 0x1);
+    printf(" ");
+}
 
+void SYS (MV *maquina ){
+    int num = obtenerValor(maquina, maquina->registros[2]);
+    unsigned int eax = maquina->registros[10];
+    unsigned int edx = maquina->registros[13];
+    unsigned int ecx = maquina->registros[12];
+
+    int cantidad = ecx & 0xFFFF;
+    int tamanio  = (ecx >> 16) & 0xFFFF;
+
+        for (int i = 0; i < cantidad; i++){
+        unsigned int dirLogica = edx + i * tamanio;
+        int dirFis = direccionFisica(maquina, dirLogica);
+        
+        printf("[%04X]: ",dirFis);
+
+        if (num==1){ //READ
+            int valorLeido=0;
+            if (eax & 0x02){
+                char c;
+                scanf("%c", &c);
+                valorLeido= (unsigned char) c;   
+            }
+            else if (eax & 0x10){
+                    char texto[64];
+                    scanf("%63s", texto);
+                    valorLeido = (int) strtol(texto, NULL, 2);
+                }
+            else if (eax & 0x08){
+                scanf("%x", &valorLeido);
+            }
+            else if (eax & 0x04){
+                scanf("%o", &valorLeido);
+            }
+            else {
+                scanf("%d", &valorLeido);
+            }
+
+            for (int b = 0; b < tamanio; b++)
+                maquina->memoria[dirFis + b] = (valorLeido >> (8*(tamanio-1-b))) & 0xFF;
+        }
+        else { // WRITE
+            unsigned int valor = 0;
+            for (int b = 0; b < tamanio; b++)
+                valor = (valor << 8) | maquina->memoria[dirFis + b];
+
+            if (eax & 0x10) imprimirBinario(valor, tamanio * 8);
+            if (eax & 0x08) printf("0x%X ", valor);
+            if (eax & 0x04) printf("0o%o ", valor);
+            if (eax & 0x02){
+                unsigned char c = valor & 0xFF;
+                printf("%c ", isprint(c) ? c : '.');
+            }
+            if (eax & 0x01) printf("%d ", (int) valor);
+        }
+
+        printf("\n");
+    
+            }
 }
 void JMP (MV *maquina ){ //????
     maquina->registros[0]= maquina->registros[2] & 0x0FFF;
