@@ -89,8 +89,8 @@ void guardarValor(MV *maquina, unsigned int op, unsigned int valor){
 
 //dos operandos 
 void MOV (MV *maquina ){
-    unsigned int valor = obtenerValor(maquina, maquina->registros[3]);
-   
+    int a = obtenerValor(maquina, maquina->registros[2]); 
+    int b = obtenerValor(maquina, maquina->registros[3]);
     long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
@@ -127,9 +127,8 @@ void ADD (MV *maquina ){
 void SUB (MV *maquina ){ //OPERANDO B TENGO QUE SUMARLE UNO Y SUMAR AL RESTO!!
     int valorA = obtenerValor(maquina, maquina->registros[2]);
     int valorB = obtenerValor(maquina, maquina->registros[3]);
-    int resultado = valorA - valorB;
 
-    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
+    long long resultado64= (long long)(unsigned int)valorA - (long long)(unsigned int)valorB;
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
     guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
@@ -146,23 +145,8 @@ void SUB (MV *maquina ){ //OPERANDO B TENGO QUE SUMARLE UNO Y SUMAR AL RESTO!!
 void MUL (MV *maquina ){
     int valorA = obtenerValor(maquina, maquina->registros[2]);
     int valorB = obtenerValor(maquina, maquina->registros[3]);
-    int resultado = valorA * valorB;
 
-    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
-    int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
-
-    guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
-    actualizarCC(maquina,resultado);
-
-    if ((long long)(unsigned int)resultado != resultado64)
-        maquina->registros[17] |= 0x20000000; //ACTIVA CARRY
-
-    if ((long long)(unsigned int)resultado != resultado64)
-        maquina->registros[17] |= 0x10000000; //ACTIVA OVERFLOW
-
-}
-
-    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
+    long long resultado64= (long long)(unsigned int)valorA * (long long)(unsigned int)valorB;
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
     guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
@@ -177,11 +161,11 @@ void MUL (MV *maquina ){
 }
 
 void CMP (MV *maquina ){
-
-    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
+    int valorA = obtenerValor(maquina, maquina->registros[2]);
+    int valorB = obtenerValor(maquina, maquina->registros[3]);
+    long long resultado64= (long long)(unsigned int)valorA + (long long)(unsigned int)valorB;
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
-    guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
     actualizarCC(maquina,resultado);
 
     if ((long long)(unsigned int)resultado != resultado64)
