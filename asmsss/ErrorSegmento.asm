@@ -1,0 +1,7 @@
+LDL EBX, 0
+LDH EBX, 8
+
+MOV EAX, [EBX+0]
+
+MOV EAX, 999
+STOP

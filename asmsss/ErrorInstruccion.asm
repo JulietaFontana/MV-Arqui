@@ -1,0 +1,2 @@
+MOV EAX, 999
+STOP
