@@ -38,6 +38,10 @@ int accesoamemoria(MV *maquina, unsigned int direcLogica,int escribir,unsigned i
     int cantbytes=4;
     maquina->registros[4] = direcLogica; //LAR
     int dirfisica=direccionFisica(maquina,direcLogica);
+    if (dirfisica == -1){
+        maquina->registros[0] = 0xFFFFFFFF;
+        return -1;
+    }
     maquina->registros[5] = (cantbytes << 24) | dirfisica; //MAR
 
     if (escribir){

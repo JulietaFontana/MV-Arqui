@@ -103,6 +103,8 @@ void ejecucion(MV *maquina){
         maquina->registros[0] = IP + instr.longitud;
 
         tablaOPC[instr.opc].ejecutar(maquina);
+        if (maquina->registros[0] == 0xFFFFFFFF)
+            return;
     }
 }    
 
@@ -146,13 +148,15 @@ void Disassembler(MV *maquina){
 }
 
 int main(int argc, char *argv[]){
+
     MV maquina;
+
     leeArchivo(&maquina, argv[1]);
-    ejecucion(&maquina);
 
-    if (strcmp(argv[2], "-d")==0)
+    if (argc > 2 && strcmp(argv[2], "-d") == 0)
         Disassembler(&maquina);
+    else
+        ejecucion(&maquina);
 
-
-return 0;
+    return 0;
 }
