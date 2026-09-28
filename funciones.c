@@ -110,7 +110,7 @@ void ADD (MV *maquina ){
     int a = obtenerValor(maquina, maquina->registros[2]); 
     int b = obtenerValor(maquina, maquina->registros[3]);
 
-    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b;
+    long long resultado64= (long long)(unsigned int)a + (long long)(unsigned int)b; 
     int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
 
     guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
@@ -171,7 +171,8 @@ void DIV(MV *maquina){
         return;
     }
 
-    int resultado = valorA / valorB;
+    long long resultado64= (long long)(unsigned int)valorA / (long long)(unsigned int)valorB;
+    int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
     int resto = valorA % valorB;
 
     guardarValor(maquina, maquina->registros[2], resultado);
@@ -179,7 +180,11 @@ void DIV(MV *maquina){
     maquina->registros[16] = resto; // AC
 
     actualizarCC(maquina, resultado);
-    //falta carry y overflow
+    if ((long long)(unsigned int)resultado != resultado64)
+        maquina->registros[17] |= 0x20000000; //ACTIVA CARRY
+
+    if ((long long)(int)resultado != resultado64)
+        maquina->registros[17] |= 0x10000000; //ACTIVA OVERFLOW
 }
 
 void CMP (MV *maquina ){
@@ -347,7 +352,7 @@ void SYS (MV *maquina ){
             for (int b = 0; b < tamanio; b++)
                 maquina->memoria[dirFis + b] = (valorLeido >> (8*(tamanio-1-b))) & 0xFF;
         }
-        else { // WRITE
+        else if(num == 2){ // WRITE
             unsigned int valor = 0;
             for (int b = 0; b < tamanio; b++)
                 valor = (valor << 8) | maquina->memoria[dirFis + b];
@@ -397,19 +402,19 @@ void JV (MV *maquina ){
         } 
 }
 void JNP (MV *maquina ){
-    if ( (maquina->registros[17] & 0x80000000) <=0){
+    if ( (maquina->registros[17] & 0x80000000) != 0 || (maquina->registros[17] & 0x40000000) != 0){
         maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
     } 
 
 }
 void JNN (MV *maquina ){
-    if ( (maquina->registros[17] & 0x40000000) >=0){
+    if ( (maquina->registros[17] & 0x80000000) ==0 ){
         maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
     } 
 
 }
 void JNZ (MV *maquina ){
-    if ( (maquina->registros[17] & 0x40000000) !=0){
+    if ( (maquina->registros[17] & 0x40000000) ==0){
         maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
     } 
 

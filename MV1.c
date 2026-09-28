@@ -155,8 +155,10 @@ int main(int argc, char *argv[]){
 
     if (argc > 2 && strcmp(argv[2], "-d") == 0)
         Disassembler(&maquina);
-    else
+    else{
         ejecucion(&maquina);
-
+        
+        printf("CC  = %08X\n", maquina.registros[17]);
+    }
     return 0;
 }
