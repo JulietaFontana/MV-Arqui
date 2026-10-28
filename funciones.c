@@ -1,11 +1,12 @@
 #include "funciones.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <ctype.h>
 
 //ACTUALIZA CC
 void actualizarCC (MV *maquina, int valor){
-    maquina->registros[17] &= 0x00000000;
+    maquina->registros[17] &= 0;
     if (valor<0)
         maquina->registros[17] |= 0x80000000; // se activa si es negativo 
     if (valor==0)
@@ -42,7 +43,7 @@ int accesoamemoria(MV *maquina, unsigned int direcLogica,int escribir,unsigned i
         maquina->registros[0] = 0xFFFFFFFF;
         return -1;
     }
-    maquina->registros[5] = (cantbytes << 24) | dirfisica; //MAR
+    maquina->registros[5] = (cantbytes << 16) | (dirfisica & 0xFFFF); //MAR
 
     if (escribir){
         maquina->registros[6]=valorEscribir;//MBR
@@ -65,9 +66,9 @@ int obtenerValor(MV *maquina, unsigned int op){
         int reg = op & 0x1F;
         return maquina->registros[reg];
     }else if (tipo == 2){
-        return op & 0xFFFF;
+        return (int16_t)(op & 0xFFFF);
     }else if(tipo == 3){
-        int offset = op >> 8 & 0xFFFF;
+        int offset = (int16_t)((op >> 8) & 0xFFFF);
         int codReg = op & 0x1F;
         int direcLogica = maquina->registros[codReg] + offset;
         return accesoamemoria(maquina, direcLogica, 0,0);
@@ -81,7 +82,7 @@ void guardarValor(MV *maquina, unsigned int op, unsigned int valor){
         int reg = op & 0x1F;
         maquina->registros[reg] = valor;
     }else if (tipo ==3){
-        int offset = op >> 8 & 0xFFFF;
+        int offset = (int16_t)((op >> 8) & 0xFFFF);
         int codReg = op & 0x1F;
         int direcLogica = maquina->registros[codReg] + offset;
         accesoamemoria(maquina, direcLogica,1,valor);
@@ -125,22 +126,29 @@ void ADD (MV *maquina ){
 }
 
 
-void SUB (MV *maquina ){ //OPERANDO B TENGO QUE SUMARLE UNO Y SUMAR AL RESTO!!
+void SUB(MV *maquina) {
+
     int valorA = obtenerValor(maquina, maquina->registros[2]);
     int valorB = obtenerValor(maquina, maquina->registros[3]);
 
-    long long resultado64= (long long)(unsigned int)valorA - (long long)(unsigned int)valorB;
-    int resultado= (unsigned int) resultado64; //LO PASO A 32 BITS
+    // Resta sin signo: para calcular carry
+    long long resultado64 =(long long)(unsigned int)valorA -(long long)(unsigned int)valorB;
 
-    guardarValor(maquina,maquina->registros[2], (unsigned int) resultado);
-    actualizarCC(maquina,resultado);
+    // Resta con signo: para calcular overflow
+    long long resultadoSigno =(long long)valorA - (long long)valorB;
 
-    if ((long long)(unsigned int)resultado != resultado64)
-        maquina->registros[17] |= 0x20000000; //ACTIVA CARRY
+    int resultado = (unsigned int)resultado64;
 
-    if ((long long)(int)resultado != resultado64)
-        maquina->registros[17] |= 0x10000000; //ACTIVA OVERFLOW
+    guardarValor(maquina, maquina->registros[2], (unsigned int)resultado);
+    actualizarCC(maquina, resultado);
 
+    // CARRY: hubo préstamo en la resta
+    if (valorA < valorB)
+        maquina->registros[17] |= 0x20000000;
+
+    // OVERFLOW: el resultado no entra en 32 bits con signo
+    if (resultadoSigno > INT32_MAX || resultadoSigno < INT32_MIN)
+        maquina->registros[17] |= 0x10000000;
 }
 
 void MUL (MV *maquina ){
@@ -325,8 +333,12 @@ void SYS (MV *maquina ){
         unsigned int dirLogica = edx + i * tamanio;
         int dirFis = direccionFisica(maquina, dirLogica);
         
-        printf("[%04X]: ",dirFis);
 
+        if (dirFis == -1) {
+        maquina->registros[0] = 0xFFFFFFFF;
+        return;
+        }
+        printf("[%04X]: ",dirFis);
         if (num==1){ //READ
             int valorLeido=0;
             if (eax & 0x02){
@@ -372,50 +384,50 @@ void SYS (MV *maquina ){
             }
 }
 void JMP (MV *maquina ){ //????
-    maquina->registros[0]= maquina->registros[2] & 0x0FFF;
+    maquina->registros[0]= maquina->registros[2] & 0xFFFF;
 } 
 
 void JP (MV *maquina ){
     if ( (maquina->registros[17] & 0x80000000) == 0){
-        maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
+        maquina->registros[0]= maquina->registros[2] & 0xFFFF; //IP
     } 
 }
 void JN (MV *maquina ){
     if ( (maquina->registros[17] & 0x80000000) == 0x80000000){
-        maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
+        maquina->registros[0]= maquina->registros[2] & 0xFFFF; //IP
     } 
 }
 void JZ (MV *maquina ){
     if ((maquina->registros[17] & 0x40000000) == 0x40000000){
-        maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
+        maquina->registros[0]= maquina->registros[2] & 0xFFFF; //IP
     } 
 
 }
 void JC (MV *maquina ){
     if ((maquina->registros[17] & 0x20000000) == 0x20000000){
-        maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
+        maquina->registros[0]= maquina->registros[2] & 0xFFFF; //IP
     } 
 }
 void JV (MV *maquina ){
     if ((maquina->registros[17] & 0x10000000) == 0x10000000){
-        maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
+        maquina->registros[0]= maquina->registros[2] & 0xFFFF; //IP
         } 
 }
 void JNP (MV *maquina ){
     if ( (maquina->registros[17] & 0x80000000) != 0 || (maquina->registros[17] & 0x40000000) != 0){
-        maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
+        maquina->registros[0]= maquina->registros[2] & 0xFFFF; //IP
     } 
 
 }
 void JNN (MV *maquina ){
     if ( (maquina->registros[17] & 0x80000000) ==0 ){
-        maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
+        maquina->registros[0]= maquina->registros[2] & 0xFFFF; //IP
     } 
 
 }
 void JNZ (MV *maquina ){
     if ( (maquina->registros[17] & 0x40000000) ==0){
-        maquina->registros[0]= maquina->registros[2] & 0x0FFF; //IP
+        maquina->registros[0]= maquina->registros[2] & 0xFFFF; //IP
     } 
 
 }
