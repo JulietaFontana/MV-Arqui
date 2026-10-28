@@ -108,45 +108,68 @@ void ejecucion(MV *maquina){
     }
 }    
 
-void Disassembler(MV *maquina){
-    int direccion = 0 ;
-    while (direccion < maquina->TDS[0].tamanio){
+void Disassembler(MV *maquina) {
+    int direccion = 0;
+
+    while (direccion < maquina->TDS[0].tamanio) {
+
         Instruccion instr = decodificar(maquina, direccion);
+
         if (maquina->registros[0] == 0xFFFFFFFF)
             return;
+
         printf("[%04X] ", direccion);
-        for( int i=0; i< instr.longitud; i++)
+
+        for (int i = 0; i < instr.longitud; i++)
             printf("%02X ", maquina->memoria[direccion + i]);
+
         for (int i = instr.longitud; i < 7; i++)
             printf("   ");
-        
-        printf(" | %s ", tablaOPC[instr.opc].mnemonico);
-        if (instr.cantOperandos == 2){
-                    if (instr.tipoA == 1)
-                        printf("%s ", tablaReg[instr.opA & 0x1F]);
-                    else if (instr.tipoA == 3)
-                        printf("[%s + %d]", tablaReg[instr.opA & 0x1F], instr.opA >> 8 & 0xFFFF);
-                    printf(" , ");
-                    if (instr.tipoB == 1)
-                        printf("%s ", tablaReg[instr.opB & 0x1F]);
-                    else if (instr.tipoB == 2)
-                        printf("%d ", instr.opB & 0xFFFF);
-                    else if (instr.tipoB == 3)
-                        printf("[%s + %d]", tablaReg[instr.opB & 0x1F], instr.opB >> 8 & 0xFFFF);
-        }else if (instr.cantOperandos == 1){
-                if (instr.tipoA == 1)
-                    printf(" %s ", tablaReg[instr.opA & 0x1F]);
-                else if (instr.tipoA == 2)
-                    printf(" %d ", instr.opA & 0xFFFF);
-                else if (instr.tipoA == 3)
-                    printf("[%s + %d]", tablaReg[instr.opA & 0x1F], instr.opA >> 8 & 0xFFFF);
-            }
-            printf("\n");
-            direccion += instr.longitud;
-        } 
-        
-}
 
+        printf(" | %s ", tablaOPC[instr.opc].mnemonico);
+
+        if (instr.cantOperandos == 2) {
+
+            if (instr.tipoA == 1)
+                printf("%s ", tablaReg[instr.opA & 0x1F]);
+
+            else if (instr.tipoA == 2)
+                printf("%d ", (int16_t)(instr.opA & 0xFFFF));
+
+            else if (instr.tipoA == 3)
+                printf("[%s + %d]", tablaReg[instr.opA & 0x1F],
+                       (int16_t)((instr.opA >> 8) & 0xFFFF));
+
+            printf(" , ");
+
+            if (instr.tipoB == 1)
+                printf("%s ", tablaReg[instr.opB & 0x1F]);
+
+            else if (instr.tipoB == 2)
+                printf("%d ", (int16_t)(instr.opB & 0xFFFF));
+
+            else if (instr.tipoB == 3)
+                printf("[%s + %d]", tablaReg[instr.opB & 0x1F],
+                       (int16_t)((instr.opB >> 8) & 0xFFFF));
+
+        } else if (instr.cantOperandos == 1) {
+
+            if (instr.tipoA == 1)
+                printf("%s ", tablaReg[instr.opA & 0x1F]);
+
+            else if (instr.tipoA == 2)
+                printf("%d ", (int16_t)(instr.opA & 0xFFFF));
+
+            else if (instr.tipoA == 3)
+                printf("[%s + %d]", tablaReg[instr.opA & 0x1F],
+                       (int16_t)((instr.opA >> 8) & 0xFFFF));
+        }
+
+        // Estas líneas deben estar FUERA de los if
+        printf("\n");
+        direccion += instr.longitud;
+    }
+}
 int main(int argc, char *argv[]){
 
     MV maquina;
