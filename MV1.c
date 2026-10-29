@@ -9,7 +9,7 @@ void incializa(MV *maquina, int tamCS){
     maquina->TDS[0].base = 0;
     maquina->TDS[0].tamanio = tamCS;
     maquina->TDS[1].base = tamCS;
-    maquina->TDS[1].tamanio = 16384 - tamCS;
+    maquina->TDS[1].tamanio = maquina->tamMemoria - tamCS;
     for (int i = 2; i < 8; i++) {
         maquina->TDS[i].base = 0xFFFF;
         maquina->TDS[i].tamanio = 0xFFFF;
@@ -32,7 +32,7 @@ void leeArchivo(MV *maquina, char *nombreArch){
     else{
         fread(encabezado,sizeof(char),8,archb);
         int tamCS = ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
-        if(strncmp(encabezado, "VMX26", 5) != 0 || encabezado[5]!=1 || tamCS > 16384 ){
+        if(strncmp(encabezado, "VMX26", 5) != 0 || encabezado[5]!=1 || tamCS > maquina->tamMemoria ){
             printf("cabecera invalida"); 
             fclose(archb);
         }else{
@@ -173,6 +173,10 @@ void Disassembler(MV *maquina) {
 int main(int argc, char *argv[]){
 
     MV maquina;
+    int memKiB = 16;                                  // por defecto (después lo lee de m=M)
+    maquina.tamMemoria = memKiB * 1024;
+    maquina.memoria = calloc(maquina.tamMemoria, 1);  // reserva la memoria en 0 de lo que pida
+
 
     leeArchivo(&maquina, argv[1]);
 

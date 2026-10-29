@@ -14,7 +14,7 @@ void actualizarCC (MV *maquina, int valor){
 }
 
 //DIRECCION LOGICA A FISICA
-int direccionFisica(MV *maquina, unsigned int direccionLogica) {
+int direccionFisica(MV *maquina, unsigned int direccionLogica, int cantBytes) {
 
     unsigned int segmento = direccionLogica >> 16;
     unsigned int desplazamiento = direccionLogica & 0xFFFF;
@@ -27,7 +27,7 @@ int direccionFisica(MV *maquina, unsigned int direccionLogica) {
             printf("Error: segmento no utilizado\n");
             return -1;
         }else
-            if (desplazamiento >= maquina->TDS[segmento].tamanio) { // Validar que el acceso esté dentro de sus límites
+            if (desplazamiento + cantBytes >= maquina->TDS[segmento].tamanio) { // Validar que el acceso esté dentro de sus límites
                 printf("Error: direccion fuera del segmento\n");
                 return -1;
             }
@@ -35,29 +35,32 @@ int direccionFisica(MV *maquina, unsigned int direccionLogica) {
     return maquina->TDS[segmento].base + desplazamiento;    
 }
 
-int accesoamemoria(MV *maquina, unsigned int direcLogica,int escribir,unsigned int valorEscribir){
-    int cantbytes=4;
-    maquina->registros[4] = direcLogica; //LAR
-    int dirfisica=direccionFisica(maquina,direcLogica);
+int accesoamemoria(MV *maquina, unsigned int direcLogica,int cantBytes, int escribir,unsigned int valorEscribir){
+    maquina->registros[LAR] = direcLogica; 
+    int dirfisica=direccionFisica(maquina,direcLogica,cantBytes);
     if (dirfisica == -1){
-        maquina->registros[0] = 0xFFFFFFFF;
+        maquina->registros[IP] = 0xFFFFFFFF;
         return -1;
     }
-    maquina->registros[5] = (cantbytes << 16) | (dirfisica & 0xFFFF); //MAR
+    maquina->registros[MAR] = (cantbytes << 16) | (dirfisica & 0xFFFF); 
 
     if (escribir){
-        maquina->registros[6]=valorEscribir;//MBR
-        for(int i=0;i<cantbytes;i++) //cantbytes=4
+        maquina->registros[MBR]=valorEscribir;
+        for(int i=0;i<cantBytes;i++) //BIG ENDIAN--> se truncan los bytes altos solos
             maquina->memoria[dirfisica+i] = (valorEscribir>> (8*(cantbytes-1-i)))& 0x0FF;
         return 0;
         }       
     else {
         unsigned int dato=0;
-        for (int i=0;i< cantbytes;i++)
+        for (int i=0;i< cantBytes;i++)
             dato=(dato<<8) | maquina-> memoria[dirfisica+i];
-        maquina->registros[6]=dato; //MBR
+        
+        if (cantBytes < 4) {                  // propagar signo: 0xAB -> 0xFFFFFFAB
+            int corrimiento = 32 - 8 * cantBytes;
+            dato = (unsigned int)(((int)(dato << corrimiento)) >> corrimiento);
+        }
+        maquina->registros[MBR] = dato;
         return dato;
-        }   
 }
 
 int obtenerValor(MV *maquina, unsigned int op){
