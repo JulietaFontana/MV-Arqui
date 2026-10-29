@@ -43,10 +43,11 @@ InfoOPC    tablaOPC[32]= {
 };
 
 
-char*  tablaReg[32]={[0]="IP",  [1]="OPC", [2]="OP1", [3]="OP2",
-    [4]="LAR", [5]="MAR", [6]="MBR",
-    [10]="EAX",[11]="EBX",[12]="ECX",[13]="EDX",[14]="EEX",[15]="EFX",
-    [16]="AC", [17]="CC",
-    [26]="CS", [27]="DS"};
+char*  tablaReg[32]={[IP]="IP",   [OPC]="OPC", [OP1]="OP1", [OP2]="OP2",
+    [LAR]="LAR", [MAR]="MAR", [MBR]="MBR",
+    [SP]="SP",   [BP]="BP",
+    [EAX]="EAX", [EBX]="EBX", [ECX]="ECX", [EDX]="EDX", [EEX]="EEX", [EFX]="EFX",
+    [AC]="AC",   [CC]="CC",
+    [CS]="CS",   [DS]="DS",   [ES]="ES",   [SS]="SS",   [KS]="KS", };
 
 #endif
