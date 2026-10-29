@@ -68,14 +68,26 @@ int tamanioOperando(unsigned int op){
     int cod = (op >> 5) & 0x07;
     if (cod == 1) return 1;   // b
     if (cod == 2) return 2;   // w
-    return 4;                 // l, 
+    return 4;                 // l
+}
+// Lee un registro según su sector, propagando el signo
+int leerRegistro(MV *maquina, unsigned int op){
+    int reg = op & 0x1F; //los ultimos 5 son el registro
+    int sector = (op >> 5) & 0x03; //posicion 6 y 7 me dicen el sector entonces cuantos bytes debo obtener
+    unsigned int valor = maquina->registros[reg];
+
+    switch(sector){
+        case 1:  return (int8_t)(valor & 0xFF);          // AL--> el int8_t es para decir entero de 8 bits con signo! sino no propaga el signo
+        case 2:  return (int8_t)((valor >> 8) & 0xFF);   // AH
+        case 3:  return (int16_t)(valor & 0xFFFF);       // AX
+        default: return valor;                           // EAX
+    }
 }
 
 int obtenerValor(MV *maquina, unsigned int op){
     int tipo = op >> 24;
     if (tipo == 1){
-        int reg = op & 0x1F;
-        return maquina->registros[reg];
+        return leerRegistro(maquina, op);
     }else if (tipo == 2){
         return (int16_t)(op & 0xFFFF);
     }else if(tipo == 3){
@@ -86,12 +98,27 @@ int obtenerValor(MV *maquina, unsigned int op){
     }
      return 0;
 }
+//SOLO MODIFICO SECTOR INDICADO
+void escribirRegistro(MV *maquina, unsigned int op, unsigned int valor){
+    int reg = op & 0x1F;
+    int sector = (op >> 5) & 0x03;
+    unsigned int *r = &maquina->registros[reg];
+
+    switch(sector){
+        case 1:  *r = (*r & 0xFFFFFF00) | (valor & 0xFF);         break; // AL
+        case 2:  *r = (*r & 0xFFFF00FF) | ((valor & 0xFF) << 8);  break; // AH
+        case 3:  *r = (*r & 0xFFFF0000) | (valor & 0xFFFF);       break; // AX
+        default: *r = valor;                                             // EAX
+    }
+}
+
+
+
 void guardarValor(MV *maquina, unsigned int op, unsigned int valor){
     int tipo = op >> 24;
 
     if (tipo == 1){
-        int reg = op & 0x1F;
-        maquina->registros[reg] = valor;
+        escribirRegistro(maquina, op, valor);
     }else if (tipo ==3){
         int offset = (int16_t)((op >> 8) & 0xFFFF);
         int codReg = op & 0x1F;
@@ -100,6 +127,8 @@ void guardarValor(MV *maquina, unsigned int op, unsigned int valor){
     }
 
 }
+
+
 
 //dos operandos 
 void MOV (MV *maquina ){
