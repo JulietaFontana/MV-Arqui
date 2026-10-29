@@ -38,7 +38,19 @@ void leeArchivo(MV *maquina, char *nombreArch){
             incializaMV1(maquina, tamCS);
         }else
             if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==2){
-                fread(encabezado,sizeof(char),8,archb);
+                if(fread(encabezado + 8, sizeof(char), 10, archb) != 10){
+                printf("cabecera invalida\n");
+                fclose(archb);
+                return;
+                }
+
+                int tamDS = ((unsigned char)encabezado[8] << 8) | (unsigned char)encabezado[9];
+                int tamES = ((unsigned char)encabezado[10] << 8) | (unsigned char)encabezado[11];
+                int tamSS = ((unsigned char)encabezado[12] << 8) | (unsigned char)encabezado[13];
+                int tamKS = ((unsigned char)encabezado[14] << 8) | (unsigned char)encabezado[15];
+                int entryPoint = ((unsigned char)encabezado[16] << 8) | (unsigned char)encabezado[17];
+
+                int tamPS = 0;
             }else 
                 if (strncmp(encabezado, "VMI26", 5) == 0 && encabezado[5] == 1) {
 
