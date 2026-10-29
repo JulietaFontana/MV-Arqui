@@ -81,7 +81,8 @@ void JNP (MV *maquina);
 void JNN (MV *maquina);
 void JNZ (MV *maquina);
 void NOT (MV *maquina);
-
+void PUSH (MV *maquina);
+void POP (MV *maquina);
 
 //sin operandos
 void STOP(MV *maquina);
