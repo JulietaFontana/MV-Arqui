@@ -16,10 +16,10 @@ void incializaMV1(MV *maquina, int tamCS){
     }
     for (int i = 0; i < 32; i++) {
     maquina->registros[i] = 0;
-    }   
-    maquina->registros[26] = 0x00000000; // CS
-    maquina->registros[27] = 0x00010000; // DS
-    maquina->registros[0] = maquina->registros[26]; // IP
+    }
+    maquina->registros[CS] = 0x00000000; // CS
+    maquina->registros[DS] = 0x00010000; // DS
+    maquina->registros[IP] = maquina->registros[CS]; // IP
 }
 
 
@@ -72,7 +72,7 @@ Instruccion decodificar(MV *maquina, unsigned int direcFisica){
     instr.opc = byte & 0x1F;
     if (tablaOPC[instr.opc].mnemonico == NULL){
             printf("Error: instruccion invalida\n");
-            maquina->registros[0] = 0xFFFFFFFF;
+            maquina->registros[IP] = 0xFFFFFFFF;
     }else{
         instr.cantOperandos = tablaOPC[instr.opc].cantOperandos;
 
@@ -94,20 +94,20 @@ Instruccion decodificar(MV *maquina, unsigned int direcFisica){
 
 
 void ejecucion(MV *maquina){
-    while (maquina->registros[0]< maquina->TDS[0].tamanio){
+    while (maquina->registros[IP]< maquina->TDS[0].tamanio){
         
-        unsigned int IP = maquina->registros[0];
+        unsigned int iP = maquina->registros[IP];
         Instruccion instr = decodificar(maquina, IP);
-        if (maquina->registros[0] == 0xFFFFFFFF)
+        if (maquina->registros[IP] == 0xFFFFFFFF)
             return;
 
-        maquina->registros[1] = instr.opc;
-        maquina->registros[2] = instr.opA;
-        maquina->registros[3] = instr.opB;
-        maquina->registros[0] = IP + instr.longitud;
+        maquina->registros[OPC] = instr.opc;
+        maquina->registros[OP1] = instr.opA;
+        maquina->registros[OP2] = instr.opB;
+        maquina->registros[IP] = iP + instr.longitud;
 
         tablaOPC[instr.opc].ejecutar(maquina);
-        if (maquina->registros[0] == 0xFFFFFFFF)
+        if (maquina->registros[IP] == 0xFFFFFFFF)
             return;
     }
 }    
@@ -119,7 +119,7 @@ void Disassembler(MV *maquina) {
 
         Instruccion instr = decodificar(maquina, direccion);
 
-        if (maquina->registros[0] == 0xFFFFFFFF)
+        if (maquina->registros[IP] == 0xFFFFFFFF)
             return;
 
         printf("[%04X] ", direccion);
