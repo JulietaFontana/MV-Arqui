@@ -109,7 +109,7 @@ void ejecucion(MV *maquina){
     while (maquina->registros[IP]< maquina->TDS[0].tamanio){
         
         unsigned int iP = maquina->registros[IP];
-        Instruccion instr = decodificar(maquina, IP);
+        Instruccion instr = decodificar(maquina, iP);
         if (maquina->registros[IP] == 0xFFFFFFFF)
             return;
 
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]){
         Disassembler(&maquina);
     else{
         ejecucion(&maquina);
-        printf("CC = %08X\n", maquina.registros[17]);
+        printf("CC = %08X\n", maquina.registros[CC]);
     }
 
     free(maquina.memoria);
