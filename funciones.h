@@ -8,7 +8,8 @@ typedef struct{
 }TablaSeg;
 
 typedef struct{
-   unsigned char memoria[16384];
+   unsigned char *memoria;
+   int tamMemoria;
    TablaSeg TDS[8];
    unsigned int registros[32];
 }MV;
