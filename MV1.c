@@ -9,7 +9,7 @@ void incializaMV1(MV *maquina, int tamCS){
     maquina->TDS[0].base = 0;
     maquina->TDS[0].tamanio = tamCS;
     maquina->TDS[1].base = tamCS;
-    maquina->TDS[1].tamanio = 16384 - tamCS;
+    maquina->TDS[1].tamanio = maquina->tamMemoria - tamCS;
     for (int i = 2; i < 8; i++) {
         maquina->TDS[i].base = 0xFFFF;
         maquina->TDS[i].tamanio = 0xFFFF;
