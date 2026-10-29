@@ -4,7 +4,7 @@
 #include "funciones.h"
 #include "OPCodigos.h"
 
-void incializa(MV *maquina, int tamCS){
+void incializaMV1(MV *maquina, int tamCS){
 
     maquina->TDS[0].base = 0;
     maquina->TDS[0].tamanio = tamCS;
@@ -16,15 +16,16 @@ void incializa(MV *maquina, int tamCS){
     }
     for (int i = 0; i < 32; i++) {
     maquina->registros[i] = 0;
-    }
+    }   
     maquina->registros[26] = 0x00000000; // CS
     maquina->registros[27] = 0x00010000; // DS
     maquina->registros[0] = maquina->registros[26]; // IP
 }
 
+
 void leeArchivo(MV *maquina, char *nombreArch){
     FILE *archb;
-    char encabezado[8];
+    char encabezado[18];
 
     archb = fopen(nombreArch, "rb");
     if(archb == NULL)
@@ -32,18 +33,21 @@ void leeArchivo(MV *maquina, char *nombreArch){
     else{
         fread(encabezado,sizeof(char),8,archb);
         int tamCS = ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
-        if(strncmp(encabezado, "VMX26", 5) != 0 || encabezado[5]!=1 || tamCS > maquina->tamMemoria ){
-            printf("cabecera invalida"); 
-            fclose(archb);
-        }else{
+        if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==1 && tamCS < 16384 ){
             fread(maquina->memoria, sizeof(char), tamCS, archb);
-            incializa(maquina, tamCS);
-            fclose(archb);
-        }
+            incializaMV1(maquina, tamCS);
+        }else
+            if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==2){
+                fread(encabezado,sizeof(char),8,archb);
+            }else 
+                if (strncmp(encabezado, "VMI26", 5) == 0 && encabezado[5] == 1) {
 
+                }else 
+                    printf("cabecera invalida\n");
+        fclose(archb);
+                
     }
 }
-
 
 int leerOp(MV *maquina,int tipo,int *pos){
     int valor= tipo<<24;
@@ -172,20 +176,53 @@ void Disassembler(MV *maquina) {
 }
 int main(int argc, char *argv[]){
 
-    MV maquina;
-    int memKiB = 16;                                  // por defecto (después lo lee de m=M)
-    maquina.tamMemoria = memKiB * 1024;
-    maquina.memoria = calloc(maquina.tamMemoria, 1);  // reserva la memoria en 0 de lo que pida
+    int disassembler = 0;
+    MV maquina = {0};
+    char *archivoVMX = NULL, *archivoVMI = NULL;
 
+    maquina.tamMemoria = 16 * 1024; // Tamaño predeterminado
 
-    leeArchivo(&maquina, argv[1]);
+    for(int i = 1; i < argc; i++){
 
-    if (argc > 2 && strcmp(argv[2], "-d") == 0)
+        if(strcmp(argv[i], "-d") == 0){
+            disassembler = 1;
+        }
+        else if(strncmp(argv[i], "m=", 2) == 0){
+            maquina.tamMemoria = atoi(argv[i] + 2) * 1024;
+        }
+        else if(strstr(argv[i], ".vmx") != NULL){
+            archivoVMX = argv[i];
+        }
+        else if(strstr(argv[i], ".vmi") != NULL){
+            archivoVMI = argv[i];
+        }
+    }
+
+    if(archivoVMX == NULL && archivoVMI == NULL){
+        printf("Error: falta un archivo de entrada\n");
+        return 1;
+    }
+
+    maquina.memoria = calloc(maquina.tamMemoria, sizeof(unsigned char));
+
+    if(maquina.memoria == NULL){
+        printf("Error al reservar memoria\n");
+        return 1;
+    }
+
+    if(archivoVMX != NULL)
+        leeArchivo(&maquina, archivoVMX);
+    else
+        leeArchivo(&maquina, archivoVMI);
+
+    if(disassembler)
         Disassembler(&maquina);
     else{
         ejecucion(&maquina);
-        
-        printf("CC  = %08X\n", maquina.registros[17]);
+        printf("CC = %08X\n", maquina.registros[17]);
     }
+
+    free(maquina.memoria);
+
     return 0;
 }
