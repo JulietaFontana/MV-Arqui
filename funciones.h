@@ -83,8 +83,10 @@ void JNZ (MV *maquina);
 void NOT (MV *maquina);
 void PUSH (MV *maquina);
 void POP (MV *maquina);
+void CALL (MV *maquina); 
 
 //sin operandos
 void STOP(MV *maquina);
+void RET (MV *maquina);
 
 #endif

@@ -481,8 +481,67 @@ void NOT (MV *maquina ){
     actualizarCC(maquina, resultado);
 }
 
+void PUSH(MV *maquina){
+    maquina->registros[SP] -= 4;
+
+    if (maquina->registros[SP] < maquina->registros[SS]){
+        printf("Error: stack overflow\n");
+        maquina->registros[IP] = 0xFFFFFFFF; // TERMINA LA EJECUCION a ip le pongo -1
+        return;
+    }
+
+    unsigned int valor = obtenerValor(maquina, maquina->registros[OP1]);
+
+    accesoamemoria(maquina, maquina->registros[SP], 4, 1, valor); //guardo con 4 bytes 
+}
+
+void POP(MV *maquina){
+    unsigned int segPila = maquina->registros[SS] >> 16;
+    unsigned int offsetSP = maquina->registros[SP] & 0xFFFF;
+
+    if (offsetSP + 4 > maquina->TDS[segPila].tamanio){  //SI NO PUEDO PONER 4 BYTES MAS, PILA LLENA 
+        printf("Error: stack underflow\n");
+        maquina->registros[IP] = 0xFFFFFFFF; //TERMINO EJECUCION
+        return;
+    }
+
+    //leo los 4 del tope
+    unsigned int valor=accesomemoria(maquina,maquina->registros[SP],4,0,0);
+    guardarValor(maquina,maquina->registros[OP1],valor);
+    maquina-> registros[SP]+=4;
+
+}
 //sin operandos 
 void STOP(MV *maquina ) {
     printf("SE EJECUTO STOP"); //cartel para chequear
     maquina->registros[IP] = 0xFFFFFFFF;
+}
+
+void CALL(MV *maquina){
+    maquina->registros[SP]-=4;
+
+    //TIENE QUE HABER ESPACIO PARA SABER A QUE INSTRUCCION VOLVER
+    if (maquina->registros[SP]< maquina->registros[SS]){
+        printf("Error: stack overflow\n");
+        maquina->registros[IP] = 0xFFFFFFFF;
+        return;   
+    }
+    accesoamemoria(maquina, maquina->registros[SP], 4, 1, maquina->registros[IP]);
+    unsigned int destino = obtenerValor(maquina, maquina->registros[OP1]);
+    maquina->registros[IP] = (maquina->registros[IP] & 0xFFFF0000) | (destino & 0xFFFF);  //SALTA DENTRO DEL CODE SEGMENT, CONSERVA EL CS Y PONE NUEVO OFFSET
+
+}
+
+void RET(MV *maquina){
+    unsigned int segPila = maquina->registros[SS] >> 16;
+    unsigned int offsetSP = maquina->registros[SP] & 0xFFFF;
+
+    if (offsetSP + 4 > maquina->TDS[segPila].tamanio){
+        printf("Error: stack underflow\n");
+        maquina->registros[IP] = 0xFFFFFFFF;
+        return;
+    }
+
+    maquina->registros[IP] = accesoamemoria(maquina, maquina->registros[SP], 4, 0, 0);
+    maquina->registros[SP] += 4;
 }
