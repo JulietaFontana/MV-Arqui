@@ -50,7 +50,17 @@ void inicializaMV2(MV *maquina, int tamPS, int tamKS, int tamCS, int tamDS, int 
     maquina->registros[IP] = maquina->registros[CS] | entryPoint;
     maquina->registros[SP] = maquina->registros[SS] + tamSS;
 }
+void inicializaPila(MV *maquina, int cantidadParametros, unsigned int direccionArgv){
 
+    maquina->registros[SP] -= 4;
+    accesoamemoria(maquina, maquina->registros[SP], 4, 1, 0xFFFFFFFF);
+
+    maquina->registros[SP] -= 4;
+    accesoamemoria(maquina, maquina->registros[SP], 4, 1, cantidadParametros);
+
+    maquina->registros[SP] -= 4;
+    accesoamemoria(maquina, maquina->registros[SP], 4, 1, direccionArgv);
+}
 
 int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
     FILE *archb;
@@ -67,6 +77,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
         }
         int tamCS = ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
         if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==1){   //VMX V=1
+                maquina->version = 1;
                 if(tamCS <= maquina->tamMemoria){
                     fread(maquina->memoria, sizeof(char), tamCS, archb);
                     incializaMV1(maquina, tamCS);
@@ -78,6 +89,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                 }
         }else
             if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==2){ //VMX V=2
+                maquina->version = 2;
                 if(fread(encabezado + 8, sizeof(char), 10, archb) != 10){
                     printf("cabecera invalida\n");
                     fclose(archb);
@@ -123,7 +135,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
         return 1;       
     }
 }
-void cargaPS(MV *maquina, char *nombreArch, int argc, char *argv[], int inicioParametros){
+unsigned int cargaPS(MV *maquina, char *nombreArch, int argc, char *argv[], int inicioParametros){
     int posicion = 0;
     int cantidad = argc - inicioParametros + 1;
     int direcciones[cantidad];
@@ -131,7 +143,7 @@ void cargaPS(MV *maquina, char *nombreArch, int argc, char *argv[], int inicioPa
     direcciones[0] = posicion;
     strcpy((char *)maquina->memoria + posicion, nombreArch);
     posicion += strlen(nombreArch) + 1;
-
+    int inicioArgv = posicion;
     for(int i = inicioParametros; i < argc; i++){
         direcciones[i - inicioParametros + 1] = posicion;
 
@@ -144,6 +156,7 @@ void cargaPS(MV *maquina, char *nombreArch, int argc, char *argv[], int inicioPa
         accesoamemoria(maquina, maquina->registros[PS] | posicion, 4, 1, puntero);
         posicion += 4;
     }
+    return maquina->registros[PS] | inicioArgv; //devuelve donde comienza argv
 }
 
 int leerOp(MV *maquina,int tipo,int *pos){
@@ -282,10 +295,10 @@ void Disassembler(MV *maquina) {
 }
 int main(int argc, char *argv[]){
 
-    int disassembler = 0,cargado;
+    int disassembler = 0, cargado;
     MV maquina = {0};
     char *archivoVMX = NULL, *archivoVMI = NULL;
-    int cantidadParametros = 0, inicioParametros=0, tamPS=0;
+    int cantidadParametros = 0, inicioParametros = 0, tamPS = 0;
     maquina.tamMemoria = 16 * 1024; // Tamaño predeterminado
 
     for(int i = 1; i < argc; i++){
@@ -303,7 +316,7 @@ int main(int argc, char *argv[]){
             archivoVMI = argv[i];
         }
         else if(strcmp(argv[i], "-p") == 0){
-            inicioParametros = i+1;
+            inicioParametros = i + 1;
             cantidadParametros = argc - inicioParametros;
             break;
         }
@@ -313,11 +326,14 @@ int main(int argc, char *argv[]){
         printf("Error: falta un archivo de entrada\n");
         return 1;
     }
+
     if(inicioParametros > 0 && archivoVMX != NULL){
         tamPS = strlen(archivoVMX) + 1;
+
         for(int i = inicioParametros; i < argc; i++){
             tamPS += strlen(argv[i]) + 1;
         }
+
         tamPS += (cantidadParametros + 1) * 4;
     }
 
@@ -328,22 +344,38 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    if(archivoVMX != NULL){
-        cargado=leeArchivo(&maquina, archivoVMX, tamPS);
-        if(cargado && tamPS > 0)
-            cargaPS(&maquina, archivoVMX, argc, argv, inicioParametros);
-    }else
-        cargado= leeArchivo(&maquina, archivoVMI, 0);
+    unsigned int direccionArgv = 0xFFFFFFFF;
 
-    if(disassembler)
+    if(archivoVMX != NULL){
+        cargado = leeArchivo(&maquina, archivoVMX, tamPS);
+
+        if(cargado && maquina.version == 2){
+
+            if(tamPS > 0){
+                direccionArgv = cargaPS(&maquina, archivoVMX, argc, argv, inicioParametros);
+            }
+
+            inicializaPila(&maquina, cantidadParametros, direccionArgv);
+        }
+    }
+    else{
+        cargado = leeArchivo(&maquina, archivoVMI, 0);
+    }
+
+    // Si hubo un error al cargar el archivo, termina el programa
+    if(cargado == 0 || maquina.registros[IP] == 0xFFFFFFFF){
+        free(maquina.memoria);
+        return 1;
+    }
+
+    if(disassembler){
         Disassembler(&maquina);
+    }
     else{
         ejecucion(&maquina);
         printf("CC = %08X\n", maquina.registros[CC]);
     }
-    if(cargado==0){
-        free(maquina.memoria);
-        return 1;
-    }
+
+    free(maquina.memoria);
     return 0;
 }
