@@ -423,53 +423,47 @@ void SYS (MV *maquina ){
     
             }
 }
-void JMP (MV *maquina ){ //????
-    maquina->registros[IP]= maquina->registros[OP1] & 0xFFFF;
+//SE USA PARA TODOS LOS SALTOS Y EL CALL PARA MANTENER EL SEMEGNTO CODIGO Y CAMBIAR SOLO LOS 2 BYTES MAS BAJOS DEL IP 
+void saltar(MV *maquina){
+    unsigned int destino = obtenerValor(maquina, maquina->registros[OP1]);
+    maquina->registros[IP] = (maquina->registros[IP] & 0xFFFF0000) | (destino & 0xFFFF);
+}
+
+void JMP (MV *maquina ){ 
+    saltar(maquina);
 } 
 
 void JP (MV *maquina ){
-    if ( (maquina->registros[CC] & 0x80000000) == 0){
-        maquina->registros[IP]= maquina->registros[OP1] & 0xFFFF; //IP
-    } 
+    if ((maquina->registros[CC] & 0x80000000) == 0 && (maquina->registros[CC] & 0x40000000) == 0)
+        saltar(maquina);
 }
 void JN (MV *maquina ){
-    if ( (maquina->registros[CC] & 0x80000000) == 0x80000000){
-        maquina->registros[IP]= maquina->registros[OP1] & 0xFFFF; //IP
-    } 
+    if (maquina->registros[CC] & 0x80000000)
+        saltar(maquina);
 }
 void JZ (MV *maquina ){
-    if ((maquina->registros[CC] & 0x40000000) == 0x40000000){
-        maquina->registros[IP]= maquina->registros[OP1] & 0xFFFF; //IP
-    } 
-
+    if (maquina->registros[CC] & 0x40000000)
+        saltar(maquina);
 }
 void JC (MV *maquina ){
-    if ((maquina->registros[CC] & 0x20000000) == 0x20000000){
-        maquina->registros[IP]= maquina->registros[OP1] & 0xFFFF; //IP
-    } 
+    if (maquina->registros[CC] & 0x20000000)
+        saltar(maquina);
 }
 void JV (MV *maquina ){
-    if ((maquina->registros[CC] & 0x10000000) == 0x10000000){
-        maquina->registros[IP]= maquina->registros[OP1] & 0xFFFF; //IP
-        } 
+    if (maquina->registros[CC] & 0x10000000)
+        saltar(maquina);
 }
 void JNP (MV *maquina ){
-    if ( (maquina->registros[CC] & 0x80000000) != 0 || (maquina->registros[CC] & 0x40000000) != 0){
-        maquina->registros[IP]= maquina->registros[OP1] & 0xFFFF; //IP
-    } 
-
+    if ((maquina->registros[CC] & 0x80000000) || (maquina->registros[CC] & 0x40000000))
+        saltar(maquina);
 }
 void JNN (MV *maquina ){
-    if ( (maquina->registros[CC] & 0x80000000) ==0 ){
-        maquina->registros[IP]= maquina->registros[OP1] & 0xFFFF; //IP
-    } 
-
+    if ((maquina->registros[CC] & 0x80000000) == 0)
+        saltar(maquina);
 }
 void JNZ (MV *maquina ){
-    if ( (maquina->registros[CC] & 0x40000000) ==0){
-        maquina->registros[IP]= maquina->registros[OP1] & 0xFFFF; //IP
-    } 
-
+    if ((maquina->registros[CC] & 0x40000000) == 0)
+        saltar(maquina);
 }
 void NOT (MV *maquina ){
     int valor = obtenerValor(maquina, maquina->registros[OP1]);
@@ -481,8 +475,66 @@ void NOT (MV *maquina ){
     actualizarCC(maquina, resultado);
 }
 
+void PUSH(MV *maquina){
+    maquina->registros[SP] -= 4;
+
+    if (maquina->registros[SP] < maquina->registros[SS]){
+        printf("Error: stack overflow\n");
+        maquina->registros[IP] = 0xFFFFFFFF; // TERMINA LA EJECUCION a ip le pongo -1
+        return;
+    }
+
+    unsigned int valor = obtenerValor(maquina, maquina->registros[OP1]);
+
+    accesoamemoria(maquina, maquina->registros[SP], 4, 1, valor); //guardo con 4 bytes 
+}
+
+void POP(MV *maquina){
+    unsigned int segPila = maquina->registros[SS] >> 16;
+    unsigned int offsetSP = maquina->registros[SP] & 0xFFFF;
+
+    if (offsetSP + 4 > maquina->TDS[segPila].tamanio){  //SI NO HAY 4 BYTES MAS PARA SACAR
+        printf("Error: stack underflow\n");
+        maquina->registros[IP] = 0xFFFFFFFF; //TERMINO EJECUCION
+        return;
+    }
+
+    //leo los 4 del tope
+    unsigned int valor=accesoamemoria(maquina,maquina->registros[SP],4,0,0);
+    guardarValor(maquina,maquina->registros[OP1],valor);
+    maquina-> registros[SP]+=4;
+
+}
 //sin operandos 
 void STOP(MV *maquina ) {
     printf("SE EJECUTO STOP"); //cartel para chequear
     maquina->registros[IP] = 0xFFFFFFFF;
+}
+
+void CALL(MV *maquina){
+    maquina->registros[SP]-=4;
+
+    //TIENE QUE HABER ESPACIO PARA SABER A QUE INSTRUCCION VOLVER
+    if (maquina->registros[SP]< maquina->registros[SS]){
+        printf("Error: stack overflow\n");
+        maquina->registros[IP] = 0xFFFFFFFF;
+        return;   
+    }
+    accesoamemoria(maquina, maquina->registros[SP], 4, 1, maquina->registros[IP]);
+    saltar(maquina);
+
+}
+
+void RET(MV *maquina){
+    unsigned int segPila = maquina->registros[SS] >> 16;
+    unsigned int offsetSP = maquina->registros[SP] & 0xFFFF;
+
+    if (offsetSP + 4 > maquina->TDS[segPila].tamanio){
+        printf("Error: stack underflow\n");
+        maquina->registros[IP] = 0xFFFFFFFF;
+        return;
+    }
+
+    maquina->registros[IP] = accesoamemoria(maquina, maquina->registros[SP], 4, 0, 0);
+    maquina->registros[SP] += 4;
 }
