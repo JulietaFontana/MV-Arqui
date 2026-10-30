@@ -48,10 +48,11 @@ void inicializaMV2(MV *maquina, int tamPS, int tamKS, int tamCS, int tamDS, int 
             maquina->registros[registrosSeg[i]] = 0xFFFFFFFF;
     }
     maquina->registros[IP] = maquina->registros[CS] | entryPoint;
+    maquina->registros[SP] = maquina->registros[SS] + tamSS;
 }
 
 
-void leeArchivo(MV *maquina, char *nombreArch, int tamPS){
+int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
     FILE *archb;
     char encabezado[18];
 
@@ -70,8 +71,11 @@ void leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                     fread(maquina->memoria, sizeof(char), tamCS, archb);
                     incializaMV1(maquina, tamCS);
                 }
-                else
+                else{
                     printf("ERROR: Memoria insuficiente\n");
+                    fclose(archb);
+                    return 0;
+                }
         }else
             if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==2){ //VMX V=2
                 if(fread(encabezado + 8, sizeof(char), 10, archb) != 10){
@@ -96,13 +100,18 @@ void leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                         int indiceKS = maquina->registros[KS] >> 16;
                         fread(maquina->memoria + maquina->TDS[indiceKS].base, sizeof(unsigned char), tamKS, archb);
                     }
-                }else
+                }else{
                     printf("ERROR: Memoria insuficiente\n");
+                    fclose(archb);
+                    return 0;
+                }
             }else
                 if (strncmp(encabezado, "VMI26", 5) == 0 && encabezado[5] == 1) { //VMI 
                     int tamMemoriaVMI  = (((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7])* 1024;
                     if(tamMemoriaVMI  > maquina->tamMemoria){
                         printf("ERRROR: Memoria insuficiente\n");
+                        fclose(archb);
+                        return 0;
                     }else{
                         fread(maquina->registros, sizeof(unsigned int), 32, archb);
                         fread(maquina->TDS, sizeof(TablaSeg), 8, archb);
@@ -111,7 +120,7 @@ void leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                 }else 
                     printf("cabecera invalida\n");
         fclose(archb);
-                
+        return 1;       
     }
 }
 void cargaPS(MV *maquina, char *nombreArch, int argc, char *argv[], int inicioParametros){
@@ -132,7 +141,7 @@ void cargaPS(MV *maquina, char *nombreArch, int argc, char *argv[], int inicioPa
 
     for(int i = 0; i < cantidad; i++){
         unsigned int puntero = maquina->registros[PS] | direcciones[i];
-        memcpy(maquina->memoria + posicion, &puntero, 4);
+        accesoamemoria(maquina, maquina->registros[PS] | posicion, 4, 1, puntero);
         posicion += 4;
     }
 }
@@ -182,10 +191,19 @@ Instruccion decodificar(MV *maquina, unsigned int direcFisica){
 
 
 void ejecucion(MV *maquina){
-    while (maquina->registros[IP]< maquina->TDS[0].tamanio){
+    int indiceCS = maquina->registros[CS] >> 16;
+
+    while (maquina->registros[IP] != 0xFFFFFFFF && (maquina->registros[IP] >> 16) == indiceCS &&
+      (maquina->registros[IP] & 0xFFFF) < maquina->TDS[indiceCS].tamanio){
         
         unsigned int iP = maquina->registros[IP];
-        Instruccion instr = decodificar(maquina, iP);
+        int dirFisica = direccionFisica(maquina, iP, 1);
+
+        if(dirFisica == -1){
+            maquina->registros[IP] = 0xFFFFFFFF;
+            return;
+        }
+        Instruccion instr = decodificar(maquina, dirFisica);
         if (maquina->registros[IP] == 0xFFFFFFFF)
             return;
 
@@ -202,7 +220,7 @@ void ejecucion(MV *maquina){
 
 void Disassembler(MV *maquina) {
     int direccion = 0;
-
+    
     while (direccion < maquina->TDS[0].tamanio) {
 
         Instruccion instr = decodificar(maquina, direccion);
@@ -264,7 +282,7 @@ void Disassembler(MV *maquina) {
 }
 int main(int argc, char *argv[]){
 
-    int disassembler = 0;
+    int disassembler = 0,cargado;
     MV maquina = {0};
     char *archivoVMX = NULL, *archivoVMI = NULL;
     int cantidadParametros = 0, inicioParametros=0, tamPS=0;
@@ -295,7 +313,7 @@ int main(int argc, char *argv[]){
         printf("Error: falta un archivo de entrada\n");
         return 1;
     }
-    if(inicioParametros > 0){
+    if(inicioParametros > 0 && archivoVMX != NULL){
         tamPS = strlen(archivoVMX) + 1;
         for(int i = inicioParametros; i < argc; i++){
             tamPS += strlen(argv[i]) + 1;
@@ -311,11 +329,11 @@ int main(int argc, char *argv[]){
     }
 
     if(archivoVMX != NULL){
-        leeArchivo(&maquina, archivoVMX, tamPS);
-        if(tamPS > 0)
+        cargado=leeArchivo(&maquina, archivoVMX, tamPS);
+        if(cargado && tamPS > 0)
             cargaPS(&maquina, archivoVMX, argc, argv, inicioParametros);
     }else
-        leeArchivo(&maquina, archivoVMI, 0);
+        cargado= leeArchivo(&maquina, archivoVMI, 0);
 
     if(disassembler)
         Disassembler(&maquina);
@@ -323,8 +341,9 @@ int main(int argc, char *argv[]){
         ejecucion(&maquina);
         printf("CC = %08X\n", maquina.registros[CC]);
     }
-
-    free(maquina.memoria);
-
+    if(cargado==0){
+        free(maquina.memoria);
+        return 1;
+    }
     return 0;
 }
