@@ -22,8 +22,36 @@ void incializaMV1(MV *maquina, int tamCS){
     maquina->registros[IP] = maquina->registros[CS]; // IP
 }
 
+void inicializaMV2(MV *maquina, int tamPS, int tamKS, int tamCS, int tamDS, int tamES, int tamSS, int entryPoint){
+    int base = 0;
+    int indice = 0;
+    int tamanios[6] = {tamPS, tamKS, tamCS, tamDS, tamES, tamSS};
+    int registrosSeg[6] = {PS, KS, CS, DS, ES, SS};
 
-void leeArchivo(MV *maquina, char *nombreArch){
+    for(int i = 0; i < 32; i++){
+        maquina->registros[i] = 0;
+    }
+    for(int i = 0; i < 8; i++){
+        maquina->TDS[i].base = 0xFFFF;
+        maquina->TDS[i].tamanio = 0xFFFF;
+    }
+    for(int i = 0; i < 6; i++){
+        if(tamanios[i] > 0){
+            maquina->TDS[indice].base = base;
+            maquina->TDS[indice].tamanio = tamanios[i];
+            maquina->registros[registrosSeg[i]] = indice << 16;
+
+            base += tamanios[i];
+            indice++;
+        }
+        else
+            maquina->registros[registrosSeg[i]] = 0xFFFFFFFF;
+    }
+    maquina->registros[IP] = maquina->registros[CS] | entryPoint;
+}
+
+
+void leeArchivo(MV *maquina, char *nombreArch, int tamPS){
     FILE *archb;
     char encabezado[18];
 
@@ -31,33 +59,81 @@ void leeArchivo(MV *maquina, char *nombreArch){
     if(archb == NULL)
         printf("Error al abrir el archivo tipo .vmx\n");
     else{
-        fread(encabezado,sizeof(char),8,archb);
+        if(fread(encabezado, sizeof(char), 8, archb) != 8){
+            printf("cabecera invalida\n");
+            fclose(archb);
+            return;
+        }
         int tamCS = ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
-        if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==1 && tamCS < 16384 ){
-            fread(maquina->memoria, sizeof(char), tamCS, archb);
-            incializaMV1(maquina, tamCS);
-        }else
-            if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==2){
-                if(fread(encabezado + 8, sizeof(char), 10, archb) != 10){
-                printf("cabecera invalida\n");
-                fclose(archb);
-                return;
+        if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==1){   //VMX V=1
+                if(tamCS <= maquina->tamMemoria){
+                    fread(maquina->memoria, sizeof(char), tamCS, archb);
+                    incializaMV1(maquina, tamCS);
                 }
-
+                else
+                    printf("ERROR: Memoria insuficiente\n");
+        }else
+            if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==2){ //VMX V=2
+                if(fread(encabezado + 8, sizeof(char), 10, archb) != 10){
+                    printf("cabecera invalida\n");
+                    fclose(archb);
+                    return;
+                }
                 int tamDS = ((unsigned char)encabezado[8] << 8) | (unsigned char)encabezado[9];
                 int tamES = ((unsigned char)encabezado[10] << 8) | (unsigned char)encabezado[11];
                 int tamSS = ((unsigned char)encabezado[12] << 8) | (unsigned char)encabezado[13];
                 int tamKS = ((unsigned char)encabezado[14] << 8) | (unsigned char)encabezado[15];
                 int entryPoint = ((unsigned char)encabezado[16] << 8) | (unsigned char)encabezado[17];
 
-                int tamPS = 0;
-            }else 
-                if (strncmp(encabezado, "VMI26", 5) == 0 && encabezado[5] == 1) {
-
+                if(tamCS == 0 || tamSS == 0 || entryPoint >= tamCS){
+                    printf("cabecera invalida\n");
+                }
+                else if(tamPS + tamKS + tamCS + tamDS + tamES + tamSS <= maquina->tamMemoria){
+                    inicializaMV2(maquina, tamPS, tamKS, tamCS, tamDS, tamES, tamSS,entryPoint);
+                    int indiceCS = maquina->registros[CS] >> 16;
+                    fread(maquina->memoria + maquina->TDS[indiceCS].base, sizeof(unsigned char), tamCS, archb);
+                    if(tamKS > 0){
+                        int indiceKS = maquina->registros[KS] >> 16;
+                        fread(maquina->memoria + maquina->TDS[indiceKS].base, sizeof(unsigned char), tamKS, archb);
+                    }
+                }else
+                    printf("ERROR: Memoria insuficiente\n");
+            }else
+                if (strncmp(encabezado, "VMI26", 5) == 0 && encabezado[5] == 1) { //VMI 
+                    int tamMemoriaVMI  = (((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7])* 1024;
+                    if(tamMemoriaVMI  > maquina->tamMemoria){
+                        printf("ERRROR: Memoria insuficiente\n");
+                    }else{
+                        fread(maquina->registros, sizeof(unsigned int), 32, archb);
+                        fread(maquina->TDS, sizeof(TablaSeg), 8, archb);
+                        fread(maquina->memoria, sizeof(unsigned char), tamMemoriaVMI , archb);
+                    }
                 }else 
                     printf("cabecera invalida\n");
         fclose(archb);
                 
+    }
+}
+void cargaPS(MV *maquina, char *nombreArch, int argc, char *argv[], int inicioParametros){
+    int posicion = 0;
+    int cantidad = argc - inicioParametros + 1;
+    int direcciones[cantidad];
+
+    direcciones[0] = posicion;
+    strcpy((char *)maquina->memoria + posicion, nombreArch);
+    posicion += strlen(nombreArch) + 1;
+
+    for(int i = inicioParametros; i < argc; i++){
+        direcciones[i - inicioParametros + 1] = posicion;
+
+        strcpy((char *)maquina->memoria + posicion, argv[i]);
+        posicion += strlen(argv[i]) + 1;
+    }
+
+    for(int i = 0; i < cantidad; i++){
+        unsigned int puntero = maquina->registros[PS] | direcciones[i];
+        memcpy(maquina->memoria + posicion, &puntero, 4);
+        posicion += 4;
     }
 }
 
@@ -191,7 +267,7 @@ int main(int argc, char *argv[]){
     int disassembler = 0;
     MV maquina = {0};
     char *archivoVMX = NULL, *archivoVMI = NULL;
-
+    int cantidadParametros = 0, inicioParametros=0, tamPS=0;
     maquina.tamMemoria = 16 * 1024; // Tamaño predeterminado
 
     for(int i = 1; i < argc; i++){
@@ -208,11 +284,23 @@ int main(int argc, char *argv[]){
         else if(strstr(argv[i], ".vmi") != NULL){
             archivoVMI = argv[i];
         }
+        else if(strcmp(argv[i], "-p") == 0){
+            inicioParametros = i+1;
+            cantidadParametros = argc - inicioParametros;
+            break;
+        }
     }
 
     if(archivoVMX == NULL && archivoVMI == NULL){
         printf("Error: falta un archivo de entrada\n");
         return 1;
+    }
+    if(inicioParametros > 0){
+        tamPS = strlen(archivoVMX) + 1;
+        for(int i = inicioParametros; i < argc; i++){
+            tamPS += strlen(argv[i]) + 1;
+        }
+        tamPS += (cantidadParametros + 1) * 4;
     }
 
     maquina.memoria = calloc(maquina.tamMemoria, sizeof(unsigned char));
@@ -222,10 +310,12 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    if(archivoVMX != NULL)
-        leeArchivo(&maquina, archivoVMX);
-    else
-        leeArchivo(&maquina, archivoVMI);
+    if(archivoVMX != NULL){
+        leeArchivo(&maquina, archivoVMX, tamPS);
+        if(tamPS > 0)
+            cargaPS(&maquina, archivoVMX, argc, argv, inicioParametros);
+    }else
+        leeArchivo(&maquina, archivoVMI, 0);
 
     if(disassembler)
         Disassembler(&maquina);
