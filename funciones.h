@@ -12,6 +12,7 @@ typedef struct{
    unsigned int tamMemoria;  //en bytes 
    TablaSeg TDS[8];
    unsigned int registros[32];
+   int version;
 }MV;
 
 #define IP  0
