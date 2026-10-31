@@ -74,7 +74,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
         if(fread(encabezado, sizeof(char), 8, archb) != 8){
             printf("cabecera invalida\n");
             fclose(archb);
-            return;
+            return 0;
         }
         int tamCS = ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
         if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==1){   //VMX V=1
@@ -94,7 +94,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                 if(fread(encabezado + 8, sizeof(char), 10, archb) != 10){
                     printf("cabecera invalida\n");
                     fclose(archb);
-                    return;
+                    return 0;
                 }
                 int tamDS = ((unsigned char)encabezado[8] << 8) | (unsigned char)encabezado[9];
                 int tamES = ((unsigned char)encabezado[10] << 8) | (unsigned char)encabezado[11];
@@ -245,16 +245,18 @@ void ejecucion(MV *maquina){
 }    
 
 void Disassembler(MV *maquina) {
-    int direccion = 0;
+    TablaSeg cs = maquina->TDS[maquina->registros[CS] >> 16];      // code segment---> numero de entrada busca para saber donde esta en la TDS
+    int entry = cs.base + (maquina->registros[IP] & 0xFFFF);       // entry point (física), desde cs.base y el offset lo tiene la IP
+    int direccion = cs.base; //DESDE DONDE ARRANCO 
     
-    while (direccion < maquina->TDS[0].tamanio) {
+    while (direccion < cs.base + cs.tamanio) {
 
         Instruccion instr = decodificar(maquina, direccion);
 
         if (maquina->registros[IP] == 0xFFFFFFFF)
             return;
 
-        printf("[%04X] ", direccion);
+        printf("%c[%04X] ", direccion == entry ? '>' : ' ', direccion);
 
         for (int i = 0; i < instr.longitud; i++)
             printf("%02X ", maquina->memoria[direccion + i]);
@@ -290,15 +292,30 @@ void Disassembler(MV *maquina) {
 
         } else if (instr.cantOperandos == 1) {
 
-            if (instr.tipoA == 1)
-                printf("%s ", tablaReg[instr.opA & 0x1F]);
+            if (instr.tipoA == 1){
+                int reg = instr.opA & 0x1F;
+                int sector = (instr.opA >> 5) & 0x03;
+                if (reg >= EAX && reg <= EFX && sector == 1)
+                    printf("%cL ", tablaReg[reg][1]);          // AL, BL...
+                else if (reg >= EAX && reg <= EFX && sector == 2)
+                    printf("%cH ", tablaReg[reg][1]);          // AH, BH...
+                else if (reg >= EAX && reg <= EFX && sector == 3)
+                    printf("%cX ", tablaReg[reg][1]);          // AX, BX...
+                else
+                    printf("%s ", tablaReg[reg]);              // EAX, DS, SP...
+            }
 
             else if (instr.tipoA == 2)
                 printf("%d ", (int16_t)(instr.opA & 0xFFFF));
 
-            else if (instr.tipoA == 3)
-                printf("[%s + %d]", tablaReg[instr.opA & 0x1F],
-                       (int16_t)((instr.opA >> 8) & 0xFFFF));
+            else if (instr.tipoA == 3){
+                int tam = (instr.opA >> 5) & 0x07;
+                if (tam == 1) printf("b");
+                else if (tam == 2) printf("w");
+                else if (tam == 4) printf("l");
+                printf("[%s%+d] ", tablaReg[instr.opA & 0x1F],
+                    (int16_t)((instr.opA >> 8) & 0xFFFF));
+}
         }
 
         // Estas líneas deben estar FUERA de los if
