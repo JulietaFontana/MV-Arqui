@@ -13,6 +13,9 @@ typedef struct{
    TablaSeg TDS[8];
    unsigned int registros[32];
    int version;
+   char *archivoVMI;
+   int pasoAPaso;
+   int salirDebugger;
 }MV;
 
 #define IP  0
@@ -51,6 +54,8 @@ int tamanioOperando(unsigned int op);
 int obtenerValor(MV *maquina, unsigned int op);
 void guardarValor(MV *maquina, unsigned int op, unsigned int valor);
 int accesoamemoria(MV *maquina, unsigned int direcLogica,int cantBytes, int escribir, unsigned int valorEscribir);
+void guardarVMI(MV *maquina);
+void breakpoint(MV *maquina);
 
 //Si es operacion con dos operandos 
 void MOV (MV *maquina );
