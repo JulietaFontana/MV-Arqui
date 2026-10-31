@@ -67,9 +67,10 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
     char encabezado[18];
 
     archb = fopen(nombreArch, "rb");
-    if(archb == NULL)
+    if(archb == NULL){
         printf("Error al abrir el archivo tipo .vmx\n");
-    else{
+        return;
+    }else{
         if(fread(encabezado, sizeof(char), 8, archb) != 8){
             printf("cabecera invalida\n");
             fclose(archb);
@@ -103,6 +104,8 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
 
                 if(tamCS == 0 || tamSS == 0 || entryPoint >= tamCS){
                     printf("cabecera invalida\n");
+                    fclose(archb);
+                    return;
                 }
                 else if(tamPS + tamKS + tamCS + tamDS + tamES + tamSS <= maquina->tamMemoria){
                     inicializaMV2(maquina, tamPS, tamKS, tamCS, tamDS, tamES, tamSS,entryPoint);
@@ -129,8 +132,11 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                         fread(maquina->TDS, sizeof(TablaSeg), 8, archb);
                         fread(maquina->memoria, sizeof(unsigned char), tamMemoriaVMI , archb);
                     }
-                }else 
+                }else {
                     printf("cabecera invalida\n");
+                    fclose(archb);
+                    return;
+                }
         fclose(archb);
         return 1;       
     }
@@ -143,14 +149,14 @@ unsigned int cargaPS(MV *maquina, char *nombreArch, int argc, char *argv[], int 
     direcciones[0] = posicion;
     strcpy((char *)maquina->memoria + posicion, nombreArch);
     posicion += strlen(nombreArch) + 1;
-    int inicioArgv = posicion;
+    
     for(int i = inicioParametros; i < argc; i++){
         direcciones[i - inicioParametros + 1] = posicion;
 
         strcpy((char *)maquina->memoria + posicion, argv[i]);
         posicion += strlen(argv[i]) + 1;
     }
-
+    int inicioArgv = posicion;
     for(int i = 0; i < cantidad; i++){
         unsigned int puntero = maquina->registros[PS] | direcciones[i];
         accesoamemoria(maquina, maquina->registros[PS] | posicion, 4, 1, puntero);
@@ -226,7 +232,14 @@ void ejecucion(MV *maquina){
         maquina->registros[IP] = iP + instr.longitud;
 
         tablaOPC[instr.opc].ejecutar(maquina);
+
+        if (maquina->salirDebugger)
+            return;
         if (maquina->registros[IP] == 0xFFFFFFFF)
+            return;
+        if (maquina->pasoAPaso && !(instr.opc == 0x00 && obtenerValor(maquina, maquina->registros[OP1]) == 0xF))
+            breakpoint(maquina);
+        if (maquina->salirDebugger)
             return;
     }
 }    
@@ -338,7 +351,7 @@ int main(int argc, char *argv[]){
             break;
         }
     }
-
+    maquina.archivoVMI = archivoVMI;
     if(archivoVMX == NULL && archivoVMI == NULL){
         printf("Error: falta un archivo de entrada\n");
         return 1;
