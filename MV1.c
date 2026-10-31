@@ -73,7 +73,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
         if(fread(encabezado, sizeof(char), 8, archb) != 8){
             printf("cabecera invalida\n");
             fclose(archb);
-            return;
+            return 0;
         }
         int tamCS = ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
         if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==1){   //VMX V=1
@@ -93,7 +93,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                 if(fread(encabezado + 8, sizeof(char), 10, archb) != 10){
                     printf("cabecera invalida\n");
                     fclose(archb);
-                    return;
+                    return 0;
                 }
                 int tamDS = ((unsigned char)encabezado[8] << 8) | (unsigned char)encabezado[9];
                 int tamES = ((unsigned char)encabezado[10] << 8) | (unsigned char)encabezado[11];
