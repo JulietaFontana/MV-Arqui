@@ -478,6 +478,7 @@ void SYS (MV *maquina){
         case 0: 
             sysLimpiarPantalla(maquina);   break;
         case 0xF:
+            breakpoint(maquina);
             break; ///FALTTTTTTTTAAAAAAA        
         default:
             printf("Error: llamada al sistema invalida\n");
@@ -485,7 +486,55 @@ void SYS (MV *maquina){
     }
 }
 
+void guardarVMI(MV *maquina){
 
+    FILE *archivo = fopen(maquina->archivoVMI, "wb");
+
+    if(archivo == NULL){
+        printf("Error al crear el archivo VMI\n");
+        return;
+    }
+    fwrite("VMI26", 1, 5, archivo);
+    unsigned char version = 1;
+    fwrite(&version, 1, 1, archivo);
+    unsigned char tamanio[2];
+    int memoriaKB = maquina->tamMemoria / 1024;
+
+    tamanio[0] = (memoriaKB >> 8) & 0xFF;
+    tamanio[1] = memoriaKB & 0xFF;
+
+    fwrite(tamanio, 1, 2, archivo);
+    fwrite(maquina->registros, sizeof(unsigned int), 32, archivo);
+    fwrite(maquina->TDS, sizeof(TablaSeg), 8, archivo);
+    fwrite(maquina->memoria, sizeof(unsigned char),
+           maquina->tamMemoria, archivo);
+
+    fclose(archivo);
+}
+void breakpoint(MV *maquina){
+
+    if(maquina->archivoVMI == NULL)
+        return;
+
+    guardarVMI(maquina);
+
+    printf("\nBreakpoint alcanzado\n");
+    printf("g: continuar | q: salir | Enter: paso a paso\n");
+
+    int opcion = getchar();
+
+    // Descartar el resto de la línea
+    if(opcion != '\n'){
+        int c;
+        while((c = getchar()) != '\n' && c != EOF);
+    }
+    if(opcion == 'q')
+        maquina->salirDebugger = 1;
+    else if(opcion == '\n')
+        maquina->pasoAPaso = 1;
+    else if(opcion == 'g')
+        maquina->pasoAPaso = 0;
+}
 //SE USA PARA TODOS LOS SALTOS Y EL CALL PARA MANTENER EL SEMEGNTO CODIGO Y CAMBIAR SOLO LOS 2 BYTES MAS BAJOS DEL IP 
 void saltar(MV *maquina){
     unsigned int destino = obtenerValor(maquina, maquina->registros[OP1]);
