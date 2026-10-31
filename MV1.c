@@ -69,12 +69,12 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
     archb = fopen(nombreArch, "rb");
     if(archb == NULL){
         printf("Error al abrir el archivo tipo .vmx\n");
-        return;
+        return 0;
     }else{
         if(fread(encabezado, sizeof(char), 8, archb) != 8){
             printf("cabecera invalida\n");
             fclose(archb);
-            return;
+            return 0;
         }
         int tamCS = ((unsigned char)encabezado[6] << 8) | (unsigned char)encabezado[7];
         if(strncmp(encabezado, "VMX26", 5) == 0 && encabezado[5]==1){   //VMX V=1
@@ -94,7 +94,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                 if(fread(encabezado + 8, sizeof(char), 10, archb) != 10){
                     printf("cabecera invalida\n");
                     fclose(archb);
-                    return;
+                    return 0;
                 }
                 int tamDS = ((unsigned char)encabezado[8] << 8) | (unsigned char)encabezado[9];
                 int tamES = ((unsigned char)encabezado[10] << 8) | (unsigned char)encabezado[11];
@@ -105,7 +105,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                 if(tamCS == 0 || tamSS == 0 || entryPoint >= tamCS){
                     printf("cabecera invalida\n");
                     fclose(archb);
-                    return;
+                    return 0;
                 }
                 else if(tamPS + tamKS + tamCS + tamDS + tamES + tamSS <= maquina->tamMemoria){
                     inicializaMV2(maquina, tamPS, tamKS, tamCS, tamDS, tamES, tamSS,entryPoint);
@@ -135,7 +135,7 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                 }else {
                     printf("cabecera invalida\n");
                     fclose(archb);
-                    return;
+                    return 0;
                 }
         fclose(archb);
         return 1;       
