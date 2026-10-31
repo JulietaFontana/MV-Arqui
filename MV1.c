@@ -279,15 +279,30 @@ void Disassembler(MV *maquina) {
 
         } else if (instr.cantOperandos == 1) {
 
-            if (instr.tipoA == 1)
-                printf("%s ", tablaReg[instr.opA & 0x1F]);
+            if (instr.tipoA == 1){
+                int reg = instr.opA & 0x1F;
+                int sector = (instr.opA >> 5) & 0x03;
+                if (reg >= EAX && reg <= EFX && sector == 1)
+                    printf("%cL ", tablaReg[reg][1]);          // AL, BL...
+                else if (reg >= EAX && reg <= EFX && sector == 2)
+                    printf("%cH ", tablaReg[reg][1]);          // AH, BH...
+                else if (reg >= EAX && reg <= EFX && sector == 3)
+                    printf("%cX ", tablaReg[reg][1]);          // AX, BX...
+                else
+                    printf("%s ", tablaReg[reg]);              // EAX, DS, SP...
+            }
 
             else if (instr.tipoA == 2)
                 printf("%d ", (int16_t)(instr.opA & 0xFFFF));
 
-            else if (instr.tipoA == 3)
-                printf("[%s + %d]", tablaReg[instr.opA & 0x1F],
-                       (int16_t)((instr.opA >> 8) & 0xFFFF));
+            else if (instr.tipoA == 3){
+                int tam = (instr.opA >> 5) & 0x07;
+                if (tam == 1) printf("b");
+                else if (tam == 2) printf("w");
+                else if (tam == 4) printf("l");
+                printf("[%s%+d] ", tablaReg[instr.opA & 0x1F],
+                    (int16_t)((instr.opA >> 8) & 0xFFFF));
+}
         }
 
         // Estas líneas deben estar FUERA de los if
