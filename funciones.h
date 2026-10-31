@@ -71,7 +71,11 @@ void LDL (MV *maquina );
 void RND (MV *maquina );
 
 //un solo operando
-void SYS (MV *maquina);
+void SYS(MV *maquina);
+void sysEscribirString(MV *maquina);
+void sysLeerString(MV *maquina);
+void sysLimpiarPantalla(MV *maquina);
+void saltar(MV *maquina);
 void JMP (MV *maquina);
 void JP (MV *maquina);
 void JN (MV *maquina);

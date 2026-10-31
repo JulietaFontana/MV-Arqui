@@ -359,9 +359,8 @@ void imprimirBinario(unsigned int valor, int cantBits){
         printf("%d", (valor >> i) & 0x1);
     printf(" ");
 }
-
-void SYS (MV *maquina ){
-    int num = obtenerValor(maquina, maquina->registros[OP1]);
+// SYS 1 y 2  QUE ERA LO DE LA PRIMER PARTE!
+void sysLeerEscribir (MV *maquina, int num ){
     unsigned int eax = maquina->registros[EAX];
     unsigned int edx = maquina->registros[EDX];
     unsigned int ecx = maquina->registros[ECX];
@@ -423,6 +422,70 @@ void SYS (MV *maquina ){
     
             }
 }
+//SYS 3: lee string de teclado y guarda en [EDX] con ´\0´ al final de la cadena
+void sysLeerString(MV *maquina){
+    unsigned int dir = maquina->registros[EDX];
+    int max = (int) maquina->registros[ECX];      // -1 = sin límite
+    int leidos = 0;
+    int c;
+
+    while ((c = getchar()) != '\n' && c != EOF){
+        if (max == -1 || leidos < max){
+            accesoamemoria(maquina, dir, 1, 1, c);   // escribo 1 byte
+            if (maquina->registros[IP] == 0xFFFFFFFF) // se salió del segmento
+                return;
+            dir++;
+            leidos++;
+        }
+        // si ya llegó al máximo, sigue leyendo para descartar el resto de la línea
+    }
+    accesoamemoria(maquina, dir, 1, 1, 0);           // '\0' al final
+}
+
+
+// SYS 4: imprime desde [EDX] hasta encontrar un '\0'
+void sysEscribirString(MV *maquina){
+    unsigned int dir = maquina->registros[EDX];   // dirección lógica del primer carácter
+
+    while (1){
+        int c = accesoamemoria(maquina, dir, 1, 0, 0) & 0xFF;   // leo 1 byte
+        if (maquina->registros[IP] == 0xFFFFFFFF)  // se salió del segmento
+            return;
+        if (c == 0) // es ultimo caracter->nulo                         
+            break;
+        printf("%c", c);
+        dir++;                       
+    }
+}
+
+// SYS 0: limpia la pantalla
+void sysLimpiarPantalla(MV *maquina){
+    system("cls");
+}
+
+void SYS (MV *maquina){
+    int num = obtenerValor(maquina, maquina->registros[OP1]);
+
+    switch (num){
+        case 1:
+        case 2:
+            sysLeerEscribir(maquina, num);   // READ / WRITE de la Parte I
+            break;
+        case 3:
+            sysLeerString(maquina);        break;
+        case 4: 
+            sysEscribirString(maquina);    break;
+        case 0: 
+            sysLimpiarPantalla(maquina);   break;
+        case 0xF:
+            break; ///FALTTTTTTTTAAAAAAA        
+        default:
+            printf("Error: llamada al sistema invalida\n");
+            maquina->registros[IP] = 0xFFFFFFFF;
+    }
+}
+
+
 //SE USA PARA TODOS LOS SALTOS Y EL CALL PARA MANTENER EL SEMEGNTO CODIGO Y CAMBIAR SOLO LOS 2 BYTES MAS BAJOS DEL IP 
 void saltar(MV *maquina){
     unsigned int destino = obtenerValor(maquina, maquina->registros[OP1]);
