@@ -232,16 +232,18 @@ void ejecucion(MV *maquina){
 }    
 
 void Disassembler(MV *maquina) {
-    int direccion = 0;
+    TablaSeg cs = maquina->TDS[maquina->registros[CS] >> 16];      // code segment---> numero de entrada busca para saber donde esta en la TDS
+    int entry = cs.base + (maquina->registros[IP] & 0xFFFF);       // entry point (física), desde cs.base y el offset lo tiene la IP
+    int direccion = cs.base; //DESDE DONDE ARRANCO 
     
-    while (direccion < maquina->TDS[0].tamanio) {
+    while (direccion < cs.base + cs.tamanio) {
 
         Instruccion instr = decodificar(maquina, direccion);
 
         if (maquina->registros[IP] == 0xFFFFFFFF)
             return;
 
-        printf("[%04X] ", direccion);
+        printf("%c[%04X] ", direccion == entry ? '>' : ' ', direccion);
 
         for (int i = 0; i < instr.longitud; i++)
             printf("%02X ", maquina->memoria[direccion + i]);
