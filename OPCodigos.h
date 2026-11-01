@@ -49,6 +49,6 @@ char*  tablaReg[32]={[IP]="IP",   [OPC]="OPC", [OP1]="OP1", [OP2]="OP2",
     [SP]="SP",   [BP]="BP",
     [EAX]="EAX", [EBX]="EBX", [ECX]="ECX", [EDX]="EDX", [EEX]="EEX", [EFX]="EFX",
     [AC]="AC",   [CC]="CC",
-    [CS]="CS",   [DS]="DS",   [ES]="ES",   [SS]="SS",   [KS]="KS", };
+    [CS]="CS",   [DS]="DS",   [ES]="ES",   [SS]="SS",   [KS]="KS", [PS]="PS" };
 
 #endif

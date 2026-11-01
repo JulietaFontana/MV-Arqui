@@ -1,0 +1,4 @@
+MOV EAX, 5
+SYS 0xF
+ADD EAX, 1
+STOP
