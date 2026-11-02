@@ -110,7 +110,8 @@ int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
                     fread(maquina->memoria + maquina->TDS[indiceCS].base, sizeof(unsigned char), tamCS, archb);
                     if(tamKS > 0){
                         int indiceKS = maquina->registros[KS] >> 16;
-                        fread(maquina->memoria + maquina->TDS[indiceKS].base, sizeof(unsigned char), tamKS, archb);
+                        fread(maquina->memoria + maquina->TDS[indiceKS].base,sizeof(unsigned char), tamKS, archb);
+                        printf("KS cargado: %s\n",(char *)(maquina->memoria + maquina->TDS[indiceKS].base));
                     }
                 }else{
                     printf("ERROR: Memoria insuficiente\n");
@@ -242,12 +243,13 @@ void ejecucion(MV *maquina){
 }    
 
 void Disassembler(MV *maquina) {
+
     TablaSeg cs = maquina->TDS[maquina->registros[CS] >> 16];      // code segment---> numero de entrada busca para saber donde esta en la TDS
     int entry = cs.base + (maquina->registros[IP] & 0xFFFF);       // entry point (física), desde cs.base y el offset lo tiene la IP
     int direccion = cs.base; //DESDE DONDE ARRANCO 
     
     while (direccion < cs.base + cs.tamanio) {
-
+        
         Instruccion instr = decodificar(maquina, direccion);
 
         if (maquina->registros[IP] == 0xFFFFFFFF)
@@ -312,7 +314,7 @@ void Disassembler(MV *maquina) {
                 else if (tam == 4) printf("l");
                 printf("[%s%+d] ", tablaReg[instr.opA & 0x1F],
                     (int16_t)((instr.opA >> 8) & 0xFFFF));
-}
+            }
         }
 
         // Estas líneas deben estar FUERA de los if
@@ -382,7 +384,7 @@ int main(int argc, char *argv[]){
                 direccionArgv = cargaPS(&maquina, archivoVMX, argc, argv, inicioParametros);
             }
 
-            inicializaPila(&maquina, cantidadParametros, direccionArgv);
+            inicializaPila(&maquina, (tamPS>0) ? cantidadParametros+1: 0, direccionArgv);
         }
     }
     else{

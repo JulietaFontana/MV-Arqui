@@ -301,6 +301,10 @@ void SHL (MV *maquina ){
     guardarValor(maquina, maquina->registros[OP1], resultado);
 
     actualizarCC(maquina, resultado);
+    if (valorB > 0 && valorB <= 32) {
+        if ((valorA >> (32 - valorB)) & 1)
+            maquina->registros[CC] |= 0x20000000;
+    }
 
 }
 void SHR (MV *maquina ){
@@ -506,8 +510,7 @@ void guardarVMI(MV *maquina){
     fwrite(tamanio, 1, 2, archivo);
     fwrite(maquina->registros, sizeof(unsigned int), 32, archivo);
     fwrite(maquina->TDS, sizeof(TablaSeg), 8, archivo);
-    fwrite(maquina->memoria, sizeof(unsigned char),
-           maquina->tamMemoria, archivo);
+    fwrite(maquina->memoria, sizeof(unsigned char),maquina->tamMemoria, archivo);
 
     fclose(archivo);
 }
