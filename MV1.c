@@ -51,15 +51,12 @@ void inicializaMV2(MV *maquina, int tamPS, int tamKS, int tamCS, int tamDS, int 
     maquina->registros[SP] = maquina->registros[SS] + tamSS;
 }
 void inicializaPila(MV *maquina, int cantidadParametros, unsigned int direccionArgv){
-
-    maquina->registros[SP] -= 4;
-    accesoamemoria(maquina, maquina->registros[SP], 4, 1, 0xFFFFFFFF);
-
-    maquina->registros[SP] -= 4;
-    accesoamemoria(maquina, maquina->registros[SP], 4, 1, cantidadParametros);
-
     maquina->registros[SP] -= 4;
     accesoamemoria(maquina, maquina->registros[SP], 4, 1, direccionArgv);
+    maquina->registros[SP] -= 4;
+    accesoamemoria(maquina, maquina->registros[SP], 4, 1, cantidadParametros);
+    maquina->registros[SP] -= 4;
+    accesoamemoria(maquina, maquina->registros[SP], 4, 1, 0xFFFFFFFF);    
 }
 
 int leeArchivo(MV *maquina, char *nombreArch, int tamPS){
